@@ -172,65 +172,67 @@ class FirestoreUniversalTrack extends Track implements UniversalTrack {
     }
 }
 
-// class Album {
-//     name: string
-//     artists: Array<string>
+class Album {
+    name: string
+    artist: string
     
-//     constructor(name: string, artists: Array<string>){
-//         this.name = name
-//         this.artists = artists
-//     }
-// }
+    constructor(name: string, artist: string){
+        this.name = name
+        this.artist = artist
+    }
+
+    baseAlbum():Album {
+        return this
+    }
+}
 
 //TODO: Clean up artists
-class SpotifyAlbum {
+class SpotifyAlbum extends Album{
     id: string
     coverImage: string
-    name: string
+    // name: string
     artists: Array<string>
     genres: Array<any>
     // tracks: Array<SpotifyTrack>
 
     constructor (data: Spotify.AlbumResponse){
-        this.name = data.name
-        this.id = data.id
-
-        this.coverImage = data.images[0].url
         let artists = new Array<string>()
         for (let artist of data.artists){
             artists.push(artist.name)
         }
+        let name = data.name
+        let artist = artists[0]
+        super(name, artist)
+
         this.artists = artists
+        this.id = data.id
+        this.coverImage = data.images[0].url
         this.genres = data.genres
     }
 }
 
-class AppleAlbum {
+class AppleAlbum extends Album{
     id: string
     coverImage: string
-    name: string
-    artist: string
+    // name: string
+    // artist: string
     genres: Array<string>
     tracks: Array<AppleTrack>
 
     constructor (data: Apple.AlbumData){
-        this.name = data.attributes.name
+        let name = data.attributes.name
+        let artist = data.attributes.artistName
+        super(name, artist)
+
         this.id = data.id
         let rawCoverImage = data.attributes.artwork.url
         this.coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
-        console.log("covey", this.coverImage)
-        // this.coverImage = data.attributes.artwork.url
-        this.artist = data.attributes.artistName
         let tracks = new Array<AppleTrack>()
         for (let trackData of data.relationships.tracks.data) {
             let track = new AppleTrack(trackData)
             tracks.push(track)
         }
         this.tracks = tracks
-        // for (let artist of data.attributes.artistName){
-        //     artists.push(artist.name)
-        // }
-        // this.artists = artists
         this.genres = data.attributes.genreNames
     }
 }
@@ -241,7 +243,19 @@ class AppleAlbum {
 //     appleId: string
 //     name: string
 //     coverImage: string
-//     artists: Array<string>
+//     artist: string
+//     genres: Array<string>
+
+//     constructor(spotifyAlbum:SpotifyAlbum, appleAlbum:AppleAlbum){
+//         this.spotifyId = spotifyAlbum.id,
+//         this.appleId = appleAlbum.id
+//         this.name = spotifyAlbum.name
+//         this.coverImage = spotifyAlbum.coverImage
+//         this.artist = appleAlbum.artist
+//         this.genres = appleAlbum.genres
+
+//         this.id = ''
+//     }
 // }
 
 class Playlist {
@@ -477,7 +491,14 @@ export const convertObject = functions.https.onRequest((req, res) => {
                         res.status(500).send(error)
                     })
                 } else if (objectType == ObjectType.album){
-    
+                    // SpotifyAlbumToUniversal(id, spotifyToken)
+                    // .then((universalAlbum:UniversalAlbum)=>{
+
+                    // })
+                    // .catch((error:Error)=>{
+                    //     console.log(error)
+                    //     res.status(400).send(error)
+                    // })
                 } else if (objectType == ObjectType.track){
                     console.log('start')
                     SpotifyTrackToUniversal(id, spotifyToken)
@@ -487,9 +508,11 @@ export const convertObject = functions.https.onRequest((req, res) => {
                     })
                     .catch((error:Error)=>{
                         console.log(error)
+                        res.status(400).send(error)
+
                     })
                 } else {
-                    res.status(501).send('Bad Info')
+                    res.status(400).send('Bad Info')
                 }  
             } else if (serviceType == ServiceType.apple) {
                 if (objectType == ObjectType.playlist){
@@ -673,7 +696,7 @@ function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any{
                 let matchValue = searchTrack.compare(comparisonTrack)
 
                 if (matchValue == MatchValue.exactMatch){
-                    matchedTrack = comparisonTrack
+                    // matchedTrack = comparisonTrack
                     break
                 }else if (matchValue == MatchValue.match) {
                     matchedTrack = comparisonTrack
@@ -738,16 +761,124 @@ function searchAppleTrack(searchTrack:Track): any {
     })
 }
 
+function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken){
+    return new Promise (function(resolve, reject) {
+        // var matchedTrack:any = undefined
+
+        let queryName = searchAlbum.name.replace(" ", "%20")
+        let queryArtist = searchAlbum.artist.replace(" ", "%20")
+
+        const url = `https://api.spotify.com/v1/search?q=${queryName.concat("%20", queryArtist)}&type=album`;
+        const options = {
+            headers: {
+                Authorization: token.token
+            }
+        };
+
+        fetch(url, options)
+        .then( (res:any) => res.json())
+        .then( (data:any) => {
+            resolve(data)
+            // let parsedResponse = <Spotify.SearchResponse> data
+            // for (let trackData of parsedResponse.tracks.items){
+            //     let comparisonTrack = new SpotifyTrack(trackData)
+            //     let matchValue = searchTrack.compare(comparisonTrack)
+
+            //     if (matchValue == MatchValue.exactMatch){
+            //         matchedTrack = comparisonTrack
+            //         break
+            //     }else if (matchValue == MatchValue.match) {
+            //         matchedTrack = comparisonTrack
+            //     }
+            // }
+            // if (matchedTrack != undefined) {
+            //     resolve(matchedTrack)
+            // } else{
+            //     reject(Error())
+            // }
+        })
+        .catch((error:Error) => {
+            reject(error)
+        })
+    })
+}
+
+function searchAppleAlbum (searchAlbum:Album){
+    //https://api.music.apple.com/v1/catalog/us/search?term=james+brown&limit=2&types=artists,albums
+    return new Promise (function(resolve, reject) {
+
+        // var matchedAlbum:any = undefined
+
+        //TODO: certain special characters trip up the query, needs to be refined
+        let queryName = encodeURI(searchAlbum.name.replace(/[&]/g, ''))
+        let queryArtist = encodeURI(searchAlbum.artist.replace(/[&]/g, ''))
+    
+        const url = `https://api.music.apple.com/v1/catalog/us/search?term=${ queryName.concat("%20", queryArtist)}&limit=5&types=albums`;
+        console.log('URL', url)
+        const options = {
+            headers: {
+                Authorization: `Bearer ${APPLETOKEN}`
+            }
+        };
+    
+        fetch(url, options)
+        .then( (res:any) => res.json())
+        .then( (data:any) => {
+            resolve(data)
+            // let parsedResponse = <Apple.SearchResponse> data
+
+            // for (let trackData of parsedResponse.results.songs.data){
+            //     let comparisonTrack = new AppleTrack(trackData)
+            //     console.log(searchTrack.name, comparisonTrack.name)
+            //     console.log(searchTrack.artist, comparisonTrack.artist)
+            //     let matchValue = searchTrack.compare(comparisonTrack)
+    
+            //     if (matchValue == MatchValue.exactMatch){
+            //         matchedTrack = comparisonTrack
+            //         break
+            //     }else if (matchValue == MatchValue.match) {
+            //         matchedTrack = comparisonTrack
+            //     }
+            // }
+            // if (matchedTrack != undefined) {
+            //     resolve(matchedTrack)
+            // } else{
+            //     reject(Error())
+            // }
+        })
+        .catch((error:Error) => {
+            reject(error)
+        })
+    })
+}
+
 //GETTERS
 
 export const TEST2 = functions.https.onRequest((req, res) => {
-    getAppleAlbum('645402438')
+    let example = new Album('Talon of the Hawk', 'The Front Bottoms')
+    searchAppleAlbum(example)
     .then((data:any) =>{
         res.send(data)
     })
     .catch((error:Error)=>{
         res.send(error)
     })
+
+})
+
+export const TEST3 = functions.https.onRequest((req, res) => {
+    let example = new Album('Talon of the Hawk', 'The Front Bottoms')
+    getSpotifyToken()
+    .then((spotifyToken:SpotifyToken) =>{
+        searchSpotifyAlbum(example, spotifyToken)
+        .then((data:any) =>{
+            res.send(data)
+        })
+        .catch((error:Error)=>{
+            res.send(error)
+        })
+    })
+    
 
 })
 
@@ -973,7 +1104,7 @@ function SpotifyAlbumToUniversal (albumId: string, token: SpotifyToken){
                 Authorization: token.token
             }
         };
-    
+        //HERE
         fetch (url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
@@ -1375,14 +1506,3 @@ declare module Firestore {
         genres: [string];
     }
 }
-
-
-
-
-
-
-
-
-
-
-
