@@ -1,10 +1,15 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
+import { IdHash } from "./idHash"
+
 const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
 
 const APPLETOKEN = 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldWN1IyNEdVNkgifQ.eyJpYXQiOjE1Nzc2NTAwNzMsImV4cCI6MTU5MzIwMjA3MywiaXNzIjoiWk04UlZMRTQ5ViJ9.4P1-_Nqiy3huaTW9saNzrV5cGx41rbXvsuXSjwZ_h4WjqAomobIHNsrO0BtQjtxD3fsKP9eTPHjTc7_vypBVwA'
+
+//TODO: Unique Errors for different cases
+//(Music Not Found Error)
 
 
 //ENUMS
@@ -89,13 +94,26 @@ class AppleTrack extends Track{
 
 class SpotifyTrack extends Track {
     id: string;
-    // coverImage: string;
 
     constructor(data: Spotify.TrackAttributes){
         let name = data.name
         let artist = data.artists[0].name
         let album = data.album.name
         let coverImage = data.album.images[0].url
+        super(name, artist, album, coverImage)
+
+        this.id = data.id
+    }
+}
+
+class SpotifyAlbumTrack extends Track implements SpotifyTrack {
+    id: string;
+
+    constructor(data: Spotify.AlbumTrack, albumName: string, albumCover: string){
+        let name = data.name
+        let artist = data.artists[0].name
+        let album = albumName
+        let coverImage = albumCover
         super(name, artist, album, coverImage)
 
         this.id = data.id
@@ -155,8 +173,13 @@ class FirestoreUniversalTrack extends Track implements UniversalTrack {
 
         this.spotifyId = firestoreData.spotifyId
         this.appleId = firestoreData.appleId
-        this.genres = firestoreData.genres
         this.id = firestoreId
+
+        if (firestoreData.genres != undefined){
+            this.genres = firestoreData.genres
+        } else {
+            this.genres = Array<string>()
+        }
     }
 
     toFirestoreData():any{
@@ -181,6 +204,14 @@ class Album {
         this.artist = artist
     }
 
+    //TODO: improve album comparison, possibly involving track count or release date
+    compare (comparisonAlbum: Album): MatchValue {
+        if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase() && this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
+            return MatchValue.exactMatch
+        }
+        return MatchValue.nonMatch
+    }
+
     baseAlbum():Album {
         return this
     }
@@ -191,9 +222,9 @@ class SpotifyAlbum extends Album{
     id: string
     coverImage: string
     // name: string
-    artists: Array<string>
+    // artist: string
     genres: Array<any>
-    // tracks: Array<SpotifyTrack>
+    tracks: Array<SpotifyTrack>
 
     constructor (data: Spotify.AlbumResponse){
         let artists = new Array<string>()
@@ -204,10 +235,17 @@ class SpotifyAlbum extends Album{
         let artist = artists[0]
         super(name, artist)
 
-        this.artists = artists
+        // this.artist = artists[0]
         this.id = data.id
         this.coverImage = data.images[0].url
         this.genres = data.genres
+
+        let tracks = new Array<SpotifyTrack>()
+        for (let trackData of data.tracks.items) {
+            let track = new SpotifyAlbumTrack(trackData, this.name, this.coverImage)
+            tracks.push(track)
+        }
+        this.tracks = tracks
     }
 }
 
@@ -237,26 +275,139 @@ class AppleAlbum extends Album{
     }
 }
 
-// class UniversalAlbum {
-//     id: string
-//     spotifyId: string
-//     appleId: string
-//     name: string
-//     coverImage: string
-//     artist: string
-//     genres: Array<string>
+class UniversalAlbum extends Album {
+    id: string
+    spotifyId: string
+    appleId: string
+    // name: string
+    coverImage: string
+    // artist: string
+    genres: Array<string>
+    tracks: Array<UniversalTrack>
 
-//     constructor(spotifyAlbum:SpotifyAlbum, appleAlbum:AppleAlbum){
-//         this.spotifyId = spotifyAlbum.id,
-//         this.appleId = appleAlbum.id
-//         this.name = spotifyAlbum.name
-//         this.coverImage = spotifyAlbum.coverImage
-//         this.artist = appleAlbum.artist
-//         this.genres = appleAlbum.genres
+    constructor(spotifyAlbum:SpotifyAlbum, appleAlbum:AppleAlbum){
+        let name = spotifyAlbum.name
+        let artist = appleAlbum.artist
+        super(name, artist)
 
-//         this.id = ''
-//     }
-// }
+        this.spotifyId = spotifyAlbum.id,
+        this.appleId = appleAlbum.id
+        this.coverImage = spotifyAlbum.coverImage
+        this.genres = appleAlbum.genres
+
+        this.id = ''
+
+        //TODO: probably a cleaner way to do this
+        let spotifyTracks = spotifyAlbum.tracks
+        let appleTracks = appleAlbum.tracks
+        let universalTracks = Array<UniversalTrack>()
+        for (let spotifyTrack of spotifyTracks){
+            for (let appleTrack of appleTracks){
+                if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
+                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                    universalTracks.push(universalTrack)
+                    break
+                }
+            }
+        }
+        this.tracks = universalTracks
+    }
+
+    toFirestoreData(): any{
+        let firestoreTracks = Array<any>()
+        for (let track of this.tracks){
+            let trackData = {
+                id: track.id,
+                name: track.name,
+                artist: track.artist,
+                album: track.album,
+                coverImage: track.coverImage,
+                spotifyId: track.spotifyId,
+                appleId: track.appleId
+            }
+            firestoreTracks.push(trackData)
+        }
+
+        return ({
+            spotifyId: this.spotifyId,
+            appleId: this.appleId,
+            name: this.name,
+            artist: this.artist,
+            coverImage: this.coverImage,
+            genres: this.genres,
+            tracks: firestoreTracks
+           
+        })
+    }
+}
+
+/*
+class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
+    id: string
+    spotifyId: string
+    appleId: string
+    // name: string
+    coverImage: string
+    // artist: string
+    genres: Array<string>
+    tracks: Array<UniversalTrack>
+
+    constructor(data: Firestore.FirestoreAlbumData, firestoreId: string){
+        let name = data.name
+        let artist = data.artist
+        super(name, artist)
+
+        this.spotifyId = data.spotifyId
+        this.appleId = data.appleId
+        this.coverImage = data.coverImage
+        this.genres = data.genres
+
+        this.id = firestoreId
+
+        //TODO: probably a cleaner way to do this
+        let tracksData = data.tracks
+        for (let trackData of data.tracks){
+
+        }
+        // let appleTracks = appleAlbum.tracks
+        let universalTracks = Array<UniversalTrack>()
+        // for (let spotifyTrack of spotifyTracks){
+        //     for (let appleTrack of appleTracks){
+        //         if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
+        //             let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+        //             universalTracks.push(universalTrack)
+        //             break
+        //         }
+        //     }
+        // }
+        this.tracks = universalTracks
+    }
+
+    toFirestoreData(): any{
+        let firestoreTracks = Array<any>()
+        for (let track of this.tracks){
+            let trackData = {
+                id: track.id,
+                name: track.name,
+                artist: track.artist,
+                album: track.album,
+                coverImage: track.coverImage,
+            }
+            firestoreTracks.push(trackData)
+        }
+
+        return ({
+            spotifyId: this.spotifyId,
+            appleId: this.appleId,
+            name: this.name,
+            artist: this.artist,
+            coverImage: this.coverImage,
+            genres: this.genres,
+            tracks: firestoreTracks
+           
+        })
+    }
+}*/
 
 class Playlist {
     name: string
@@ -335,11 +486,14 @@ class UniversalPlaylist extends Playlist{
                 artist: track.artist,
                 album: track.album,
                 coverImage: track.coverImage,
+                spotifyId: track.spotifyId,
+                appleId: track.appleId,
             }
             firestoreTracks.push(trackData)
         }
 
         return ({
+            
             name: this.name,
             description: this.description,
             coverImage: this.coverImage,
@@ -472,14 +626,11 @@ export const convertObject = functions.https.onRequest((req, res) => {
         .then((spotifyToken:SpotifyToken) =>{
             if (serviceType == ServiceType.spotify) {
                 if (objectType == ObjectType.playlist){
-                    SpotifyPlaylistToUniversal(id, spotifyToken)
+                    spotifyPlaylistToUniversal(id, spotifyToken)
                     .then((universalPlaylist:UniversalPlaylist) =>{
-
                         storeUniversalPlaylist(universalPlaylist)
-                        // .then( (res:any) => res.json())
                         .then( (docId:any) => {
                             universalPlaylist.id = docId
-                            // console.log(docRef)
                             res.status(200).send(universalPlaylist)
                         })
                         .catch((error:Error) =>{
@@ -491,17 +642,17 @@ export const convertObject = functions.https.onRequest((req, res) => {
                         res.status(500).send(error)
                     })
                 } else if (objectType == ObjectType.album){
-                    // SpotifyAlbumToUniversal(id, spotifyToken)
-                    // .then((universalAlbum:UniversalAlbum)=>{
-
-                    // })
-                    // .catch((error:Error)=>{
-                    //     console.log(error)
-                    //     res.status(400).send(error)
-                    // })
+                    spotifyAlbumToUniversal(id, spotifyToken)
+                    .then((universalAlbum:UniversalAlbum)=>{
+                        res.status(200).send(universalAlbum)
+                    })
+                    .catch((error:Error)=>{
+                        console.log(error)
+                        res.status(400).send(error)
+                    })
                 } else if (objectType == ObjectType.track){
                     console.log('start')
-                    SpotifyTrackToUniversal(id, spotifyToken)
+                    spotifyTrackToUniversal(id, spotifyToken)
                     .then((universalTrack:UniversalTrack)=>{
                         console.log('ok', universalTrack)
                         res.status(200).send(universalTrack)
@@ -516,11 +667,40 @@ export const convertObject = functions.https.onRequest((req, res) => {
                 }  
             } else if (serviceType == ServiceType.apple) {
                 if (objectType == ObjectType.playlist){
-    
+                    applePlaylistToUniversal(id, spotifyToken)
+                    .then((universalPlaylist:UniversalPlaylist) =>{
+                        storeUniversalPlaylist(universalPlaylist)
+                        .then( (docId:any) => {
+                            universalPlaylist.id = docId
+                            res.status(200).send(universalPlaylist)
+                        })
+                        .catch((error:Error) =>{
+                            res.status(400).send(error)
+                        })
+                    })
+                    .catch((error:Error) =>{
+                        res.status(400).send(error)
+                    })
                 } else if (objectType == ObjectType.album){
-    
+                    appleAlbumToUniversal(id, spotifyToken)
+                    .then((universalAlbum:UniversalAlbum)=>{
+                        res.status(200).send(universalAlbum)
+                    })
+                    .catch((error:Error)=>{
+                        console.log(error)
+                        res.status(400).send(error)
+                    })
                 } else if (objectType == ObjectType.track){
-                    
+                    appleTrackToUniversal(id, spotifyToken)
+                    .then((universalTrack:UniversalTrack)=>{
+                        console.log('ok', universalTrack)
+                        res.status(200).send(universalTrack)
+                    })
+                    .catch((error:Error)=>{
+                        console.log(error)
+                        res.status(400).send(error)
+
+                    })
                 } else {
                     res.status(502).send('Bad Info')
                 }
@@ -556,6 +736,18 @@ export const fetchTrack = functions.https.onRequest((req,res) =>{
     })
 })
 
+export const fetchAlbum = functions.https.onRequest((req,res) =>{
+    return cors(req, res, () => {
+        fetchTrackFirestore(req.body.id)
+        .then((docData: any) =>{
+            res.status(200).send(docData)
+        })
+        .catch((error:Error) =>{
+            res.status(400).send(error)
+        })
+    })
+})
+
 export const test = functions.https.onRequest((request, response) => {
     const url = 'https://music.apple.com/us/album/me-my-dog/1438946531?i=1438946537'
     // const url = 'https://open.spotify.com/album/3wRBlpk5PRoixwOnLujTal?si=aQAL9xwmQAmDY_gL0lKoEg'
@@ -574,21 +766,21 @@ export const test = functions.https.onRequest((request, response) => {
         let spotifyToken = <SpotifyToken>values[1]
         if (parsedUrl.serviceType == ServiceType.spotify){
             if (parsedUrl.objectType == ObjectType.track){
-                SpotifyTrackToUniversal(parsedUrl.id, spotifyToken)
+                spotifyTrackToUniversal(parsedUrl.id, spotifyToken)
                 .then((result:any) => {
                     response.send(result)
                 }).catch ((error:Error) => {
                     response.send(error)
                 })
             } else if (parsedUrl.objectType == ObjectType.album){
-                SpotifyAlbumToUniversal(parsedUrl.id, spotifyToken)
+                spotifyAlbumToUniversal(parsedUrl.id, spotifyToken)
                 .then((result:any) =>{
                     response.send(result)
                 }).catch((error:Error)=>{
                     response.send(error)
                 })
             } else if (parsedUrl.objectType == ObjectType.playlist){
-                SpotifyPlaylistToUniversal(parsedUrl.id, spotifyToken)
+                spotifyPlaylistToUniversal(parsedUrl.id, spotifyToken)
                 .then((universalPlaylist:UniversalPlaylist) => {
                     response.send(universalPlaylist)
                 }).catch ((error:Error) => {
@@ -598,7 +790,7 @@ export const test = functions.https.onRequest((request, response) => {
         } else if (parsedUrl.serviceType == ServiceType.apple){
             if (parsedUrl.objectType == ObjectType.track){
                 console.log(parsedUrl.id)
-                AppleTrackToUniversal(parsedUrl.id, spotifyToken)
+                appleTrackToUniversal(parsedUrl.id, spotifyToken)
                 .then((data:any) =>{
                     response.send(data)
                 }).catch((error:Error) => {
@@ -607,7 +799,7 @@ export const test = functions.https.onRequest((request, response) => {
             } else if (parsedUrl.objectType == ObjectType.album){
                 //
             } else if (parsedUrl.objectType == ObjectType.playlist){
-                ApplePlaylistToUniversal(parsedUrl.id, spotifyToken)
+                applePlaylistToUniversal(parsedUrl.id, spotifyToken)
                 .then((universalPlaylist:UniversalPlaylist) => {
                     response.send(universalPlaylist)
                 }).catch ((error:Error) => {
@@ -734,7 +926,7 @@ function searchAppleTrack(searchTrack:Track): any {
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
-            let parsedResponse = <Apple.SearchResponse> data
+            let parsedResponse = <Apple.TrackSearchResponse> data
 
             for (let trackData of parsedResponse.results.songs.data){
                 let comparisonTrack = new AppleTrack(trackData)
@@ -761,9 +953,10 @@ function searchAppleTrack(searchTrack:Track): any {
     })
 }
 
-function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken){
+function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
     return new Promise (function(resolve, reject) {
-        // var matchedTrack:any = undefined
+
+        var spotifyAlbumId:any = undefined
 
         let queryName = searchAlbum.name.replace(" ", "%20")
         let queryArtist = searchAlbum.artist.replace(" ", "%20")
@@ -778,24 +971,28 @@ function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken){
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
-            resolve(data)
-            // let parsedResponse = <Spotify.SearchResponse> data
-            // for (let trackData of parsedResponse.tracks.items){
-            //     let comparisonTrack = new SpotifyTrack(trackData)
-            //     let matchValue = searchTrack.compare(comparisonTrack)
+            let parsedResponse = <Spotify.AlbumSearchResponse>data
+            // let albums = parsedResponse.albums.items
+            for (let albumPreviewData of parsedResponse.albums.items){
+                let comparisonAlbum = new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
+                let matchValue = searchAlbum.compare(comparisonAlbum)
 
-            //     if (matchValue == MatchValue.exactMatch){
-            //         matchedTrack = comparisonTrack
-            //         break
-            //     }else if (matchValue == MatchValue.match) {
-            //         matchedTrack = comparisonTrack
-            //     }
-            // }
-            // if (matchedTrack != undefined) {
-            //     resolve(matchedTrack)
-            // } else{
-            //     reject(Error())
-            // }
+                if (matchValue == MatchValue.exactMatch){
+                    spotifyAlbumId = albumPreviewData.id
+                    break
+                }
+            }
+            
+            getSpotifyAlbum(spotifyAlbumId, token)
+            .then((spotifyAlbum:SpotifyAlbum) =>{
+                console.log('ablum', spotifyAlbum)
+                resolve(spotifyAlbum)
+            })
+            .catch((error:Error) =>{
+                reject(error)
+            })
+
+            // resolve(data)
         })
         .catch((error:Error) => {
             reject(error)
@@ -803,11 +1000,11 @@ function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken){
     })
 }
 
-function searchAppleAlbum (searchAlbum:Album){
+function searchAppleAlbum (searchAlbum:Album):any{
     //https://api.music.apple.com/v1/catalog/us/search?term=james+brown&limit=2&types=artists,albums
     return new Promise (function(resolve, reject) {
 
-        // var matchedAlbum:any = undefined
+        var appleAlbumId:any = undefined
 
         //TODO: certain special characters trip up the query, needs to be refined
         let queryName = encodeURI(searchAlbum.name.replace(/[&]/g, ''))
@@ -824,27 +1021,28 @@ function searchAppleAlbum (searchAlbum:Album){
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
-            resolve(data)
-            // let parsedResponse = <Apple.SearchResponse> data
+            // resolve(data)
+            let parsedResponse = <Apple.AlbumSearchResponse> data
 
-            // for (let trackData of parsedResponse.results.songs.data){
-            //     let comparisonTrack = new AppleTrack(trackData)
-            //     console.log(searchTrack.name, comparisonTrack.name)
-            //     console.log(searchTrack.artist, comparisonTrack.artist)
-            //     let matchValue = searchTrack.compare(comparisonTrack)
-    
-            //     if (matchValue == MatchValue.exactMatch){
-            //         matchedTrack = comparisonTrack
-            //         break
-            //     }else if (matchValue == MatchValue.match) {
-            //         matchedTrack = comparisonTrack
-            //     }
-            // }
-            // if (matchedTrack != undefined) {
-            //     resolve(matchedTrack)
-            // } else{
-            //     reject(Error())
-            // }
+            for (let albumData of parsedResponse.results.albums.data){
+                let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
+                let matchValue = searchAlbum.compare(comparisonAlbum)
+
+                if (matchValue == MatchValue.exactMatch){
+                    appleAlbumId = albumData.id
+                    break
+                }
+            }
+
+            getAppleAlbum(appleAlbumId)
+            .then((appleAlbum:AppleAlbum) =>{
+                console.log('ablum2', appleAlbum)
+                resolve(appleAlbum)
+            })
+            .catch((error:Error) =>{
+                reject(error)
+            })
+
         })
         .catch((error:Error) => {
             reject(error)
@@ -858,6 +1056,7 @@ export const TEST2 = functions.https.onRequest((req, res) => {
     let example = new Album('Talon of the Hawk', 'The Front Bottoms')
     searchAppleAlbum(example)
     .then((data:any) =>{
+        console.log("end", data)
         res.send(data)
     })
     .catch((error:Error)=>{
@@ -867,9 +1066,13 @@ export const TEST2 = functions.https.onRequest((req, res) => {
 })
 
 export const TEST3 = functions.https.onRequest((req, res) => {
+
+    //spotify:album:1v7hBIWUmfhggbxYd9HIW7
     let example = new Album('Talon of the Hawk', 'The Front Bottoms')
     getSpotifyToken()
     .then((spotifyToken:SpotifyToken) =>{
+
+        // SpotifyAlbumToUniversal('1v7hBIWUmfhggbxYd9HIW7',spotifyToken)
         searchSpotifyAlbum(example, spotifyToken)
         .then((data:any) =>{
             res.send(data)
@@ -881,6 +1084,74 @@ export const TEST3 = functions.https.onRequest((req, res) => {
     
 
 })
+
+//fetchAlbumFirestore
+
+export const TEST4 = functions.https.onRequest((req, res) => {
+
+    //spotify:album:1v7hBIWUmfhggbxYd9HIW7
+
+    fetchAlbumFirestore('DNUKzrAz7JwXyBh63oKn', ServiceType.spotify)
+    .then((data:any)=>{
+        res.send(data)
+    })
+    .catch((error:Error)=>{
+        res.send(error)
+    })    
+
+})
+
+export const TEST5 = functions.https.onRequest((req, res) => {
+
+    //spotify:album:1v7hBIWUmfhggbxYd9HIW7
+
+    // fetchAlbumFirestore('DNUKzrAz7JwXyBh63oKn', ServiceType.spotify)
+    // .then((data:any)=>{
+    //     res.send(data)
+    // })
+    // .catch((error:Error)=>{
+    //     res.send(error)
+    // })    
+
+    if (!admin.apps.length) {
+        admin.initializeApp();
+    } 
+    return new Promise (function (resolve, reject) {
+        admin.firestore().collection("test").doc("ababababababababababababab").set({
+            test:'test'
+        })
+        .then(function(docRef) {
+            // console.log("Document written with ID: ", docRef);
+            res.send('succ')
+        })
+        .catch(function(error) {
+            // console.error("Error adding document: ", error);
+            res.send(error)
+        });
+    })
+
+})
+
+export const TEST6 = functions.https.onRequest((req, res) => {
+    let appleId = '1476463542'
+    let spotifyId = '77G0k1La0c5Dw8bAFANcyp'
+    // let num = 6987790567
+    // let num = 9999999999
+
+    let universalId = IdHash.createUniversalTrackId(spotifyId, appleId)
+
+    let decodedIds = IdHash.decodeUniversalTrackId(universalId)
+
+    let response = {
+        preSpotify: spotifyId,
+        preApple: appleId,
+        universal: universalId,
+        postSpotify: decodedIds.spotifyId,
+        postApple: decodedIds.appleId
+
+    }
+    res.send(response)
+}) 
 
 function getSpotifyTrack (trackId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
@@ -1021,7 +1292,7 @@ function getApplePlaylist (playlistId: string): any {
 
 //UNIVERSALS
 
-function SpotifyTrackToUniversal (trackId: string, token: SpotifyToken): any {
+function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
 
         fetchTrackFirestore(trackId, ServiceType.spotify)
@@ -1068,7 +1339,7 @@ function SpotifyTrackToUniversal (trackId: string, token: SpotifyToken): any {
     })
 }
 
-function AppleTrackToUniversal (trackId: string, token: SpotifyToken) {
+function appleTrackToUniversal (trackId: string, token: SpotifyToken):any {
     return new Promise(function(resolve, reject) {
         const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
         const options = {
@@ -1096,33 +1367,59 @@ function AppleTrackToUniversal (trackId: string, token: SpotifyToken) {
 }
 
 //TODO 
-function SpotifyAlbumToUniversal (albumId: string, token: SpotifyToken){
+function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):any{
     return new Promise (function(resolve, reject) {
-        const url = `https://api.spotify.com/v1/albums/${albumId}`
-        const options = {
-            headers: {
-                Authorization: token.token
-            }
-        };
-        //HERE
-        fetch (url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            resolve(data)
-            let parsedData = <Spotify.AlbumResponse>data
-            let spotifyAlbum = new SpotifyAlbum(parsedData)
-            resolve(spotifyAlbum)
-        }).catch((error:Error) => {
-            reject(error)
-        });
+
+        getSpotifyAlbum(albumId, token)
+        .then((spotifyAlbum:SpotifyAlbum) =>{
+            searchAppleAlbum(spotifyAlbum.baseAlbum())
+            .then((appleAlbum:AppleAlbum)=>{
+                console.log('12',appleAlbum)
+                let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
+                console.log('13',universalAlbum)
+
+                storeUniversalAlbum(universalAlbum)
+                .then((docId:any)=>{
+                    
+                    universalAlbum.id = docId
+                    resolve(universalAlbum)
+                })
+                .catch((error:Error)=>{
+                    console.log("PISS")
+                })
+            })
+        })
+        .catch((error:Error)=>{
+            reject(error)     
+        })
     })
 }
 
-// function AppleAlbumToUniversal (){
+function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any{
+    return new Promise (function(resolve, reject) {
+        console.log('ok1')
+        getAppleAlbum(albumId)
+        .then((appleAlbum:AppleAlbum)=>{
+            console.log('ok2')
+            searchSpotifyAlbum(appleAlbum.baseAlbum(), token)
+            .then((spotifyAlbum: SpotifyAlbum)=>{
+                console.log('1', spotifyAlbum)
+                let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
+                console.log('2', universalAlbum)
+                storeUniversalAlbum(universalAlbum)
+                .then((docId:any)=>{
+                    universalAlbum.id = docId
+                    resolve(universalAlbum)
+                })
+            })
+        })
+        .catch((error:Error)=>{
+            reject(error)     
+        })
+    })
+}
 
-// }
-
-function SpotifyPlaylistToUniversal(playlistId: string, token: SpotifyToken): any {
+function spotifyPlaylistToUniversal(playlistId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
         getSpotifyPlaylist(playlistId, token)
         .then((playlist: SpotifyPlaylist) =>{
@@ -1184,7 +1481,7 @@ function SpotifyPlaylistToUniversal(playlistId: string, token: SpotifyToken): an
     })
 }
 
-function ApplePlaylistToUniversal (playlistId: string, token: SpotifyToken): any {
+function applePlaylistToUniversal (playlistId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
         var universalTracks = new Array<UniversalTrack>()
         getApplePlaylist(playlistId)
@@ -1227,10 +1524,29 @@ function storeUniversalTrack (track: UniversalTrack): any {
         admin.firestore().collection("tracks").add(track.toFirestoreData())
         .then(function(docRef) {
             // console.log("Document written with ID: ", docRef);
-            resolve(docRef)
+            resolve(docRef.id)
         })
         .catch(function(error) {
             // console.error("Error adding document: ", error);
+            reject(error)
+        });
+    })
+}
+
+function storeUniversalAlbum(album: UniversalAlbum):any {
+    if (!admin.apps.length) {
+        admin.initializeApp();
+    } 
+    return new Promise (function (resolve, reject) {
+        console.log('14')
+        admin.firestore().collection("albums").add(album.toFirestoreData())
+        .then(function(docRef) {
+            console.log('15', docRef)
+
+            resolve(docRef.id)
+        })
+        .catch(function(error) {
+            console.log('AAAA')
             reject(error)
         });
     })
@@ -1272,6 +1588,55 @@ function fetchPlaylistFirestore (playlistId: string): any{
         .catch(function(error) {
             reject(error)
         });
+    })
+}
+
+function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
+    return new Promise (function(resolve, reject) {
+        if (!admin.apps.length) {
+            admin.initializeApp();
+        } 
+
+        if (!serviceType){
+            admin.firestore().collection("albums").doc(id).get()
+            .then(function(doc) {
+                if (doc.exists) {
+                    resolve(doc.data())
+                } else {
+                    reject('Document Does Dont Exist')
+                }
+            })
+            .catch(function(error) {
+                reject()
+            });
+        }
+
+        else if (serviceType == ServiceType.spotify){
+            admin.firestore().collection("albums").where("spotifyId", "==", id).get()
+            .then(function(querySnapshot) {
+                if (!querySnapshot.empty){
+                    let doc = querySnapshot.docs[0]
+                    resolve(doc.data())
+                    // let docData = <Firestore.FirestoreTrackData> doc.data()
+                    // let universalTrack = new FirestoreUniversalTrack(docData, doc.id)
+                    // resolve(universalTrack)
+                } else {
+                    reject()
+                }
+            })
+            .catch(function(error) {
+                reject()
+            });
+        }
+        else if (serviceType == ServiceType.apple) {
+            admin.firestore().collection("albums").where("appleId", "==", id).get()
+            .then(function(querySnapshot) {
+                querySnapshot.forEach(function(doc) {
+                });
+            })
+            .catch(function(error) {
+            });
+        }
     })
 }
 
@@ -1410,12 +1775,29 @@ declare module Apple {
         data: PlaylistData[];
     }
 
-    export interface SearchResults {
+    export interface TrackResults {
         songs: Tracks;
     }
 
-    export interface SearchResponse {
-        results: SearchResults;
+    export interface TrackSearchResponse {
+        results: TrackResults;
+    }
+
+    export interface AlbumPreviewData {
+        id: string;
+        attributes: AlbumAttributes;
+    }
+
+    export interface Albums {
+        data: AlbumPreviewData[];
+    }
+
+    export interface AlbumResults {
+        albums: Albums;
+    }
+
+    export interface AlbumSearchResponse {
+        results: AlbumResults;
     }
 
     export interface AlbumResponse {
@@ -1493,6 +1875,21 @@ declare module Spotify {
         name: string;
         tracks: AlbumTracks;
     }
+
+    export interface AlbumSearchAlbum {
+        artists: Artist[];
+        id: string;
+        images: Image[];
+        name: string;
+    }
+
+    export interface AlbumSearchItems {
+        items: AlbumSearchAlbum[];
+    }
+
+    export interface AlbumSearchResponse {
+        albums: AlbumSearchItems;
+    }
 }
 
 declare module Firestore {
@@ -1503,6 +1900,24 @@ declare module Firestore {
         artist: string;
         album: string;
         coverImage: string;
-        genres: [string];
+        genres?: [string];
+    }
+
+    // export interface AlbumTrack {
+    //     album: string;
+    //     coverImage: string;
+    //     id: string;
+    //     artist: string;
+    //     name: string;
+    // }
+
+    export interface FirestoreAlbumData {
+        artist: string;
+        name: string;
+        coverImage: string;
+        spotifyId: string;
+        appleId: string;
+        tracks: FirestoreTrackData[];
+        genres: string[];
     }
 }
