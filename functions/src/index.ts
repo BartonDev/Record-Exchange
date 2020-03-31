@@ -136,12 +136,11 @@ class UniversalTrack extends Track {
         super(name, artist, album, coverImage)
 
         this.spotifyId = spotifyTrack.id
-        
-
         this.appleId = appleTrack.id
+
         this.genres = appleTrack.genres
 
-        this.id = ''
+        this.id = IdHash.createUniversalTrackId(this.spotifyId, this.appleId)
     }
 
     toFirestoreData(): any{
@@ -1320,8 +1319,8 @@ function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): any {
                 .then((appleTrack:AppleTrack) => {
                     let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
                     storeUniversalTrack(universalTrack)
-                    .then((docRef: string) =>{
-                        universalTrack.id = docRef
+                    .then(() =>{
+                        // universalTrack.id = docRef
                         resolve(universalTrack)
                     })
                     .catch((error:Error)=>{
@@ -1404,9 +1403,7 @@ function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any{
             console.log('ok2')
             searchSpotifyAlbum(appleAlbum.baseAlbum(), token)
             .then((spotifyAlbum: SpotifyAlbum)=>{
-                console.log('1', spotifyAlbum)
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
-                console.log('2', universalAlbum)
                 storeUniversalAlbum(universalAlbum)
                 .then((docId:any)=>{
                     universalAlbum.id = docId
@@ -1522,15 +1519,57 @@ function storeUniversalTrack (track: UniversalTrack): any {
     } 
 
     return new Promise (function (resolve, reject) {
-        admin.firestore().collection("tracks").add(track.toFirestoreData())
-        .then(function(docRef) {
-            // console.log("Document written with ID: ", docRef);
-            resolve(docRef.id)
+        console.log("OKEY DOKEY DONKEY", track.id)
+        admin.firestore().collection("tracks").doc(track.id).set(track.toFirestoreData())
+        .then(function() {
+            resolve()
         })
         .catch(function(error) {
-            // console.error("Error adding document: ", error);
             reject(error)
         });
+    })
+}
+
+function storeUniversalTracks (tracks: Array<UniversalTrack>): any {
+    if (!admin.apps.length) {
+        admin.initializeApp();
+    } 
+    
+    return new Promise (function(resolve, reject){
+        let goalPromises = tracks.length
+        let allPromises = new Array<any>()
+    
+        for (let track of tracks){
+            let storagePromise = new Promise (function(resolve, reject) {
+                admin.firestore().collection("tracks").doc(track.id).get()
+                .then(function(doc:any) {
+                    if (!doc.exists) {
+                        storeUniversalTrack(track)
+                        .then(()=>{
+                            resolve()
+                        })
+                        .catch((error:Error)=>{
+                            reject(error)
+                        })
+                    }
+                })
+                .catch((error:Error) =>{
+                    reject(error)
+                })
+            })
+
+            allPromises.push(storagePromise)
+            
+            if (allPromises.length == goalPromises){
+                Promise.all(allPromises)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((error:Error) =>{
+                    reject(error)
+                })
+            }
+        }
     })
 }
 
@@ -1538,18 +1577,35 @@ function storeUniversalAlbum(album: UniversalAlbum):any {
     if (!admin.apps.length) {
         admin.initializeApp();
     } 
-    return new Promise (function (resolve, reject) {
-        console.log('14')
+
+    let tracksPromise = new Promise (function(resolve, reject) {
+        storeUniversalTracks(album.tracks)
+        .then(()=>{
+            resolve()
+        })
+        .catch((error:Error) =>{
+            reject(error)
+        })
+    })
+
+    let albumPromise = new Promise (function(resolve, reject){
         admin.firestore().collection("albums").add(album.toFirestoreData())
         .then(function(docRef) {
-            console.log('15', docRef)
-
             resolve(docRef.id)
         })
         .catch(function(error) {
-            console.log('AAAA')
             reject(error)
         });
+    })
+
+    return new Promise (function (resolve, reject) {
+        Promise.all([tracksPromise, albumPromise])
+        .then((promisedValues:any)=>{
+            resolve(promisedValues[1])
+        })
+        .catch((error:Error)=>{
+            reject(error)
+        })
     })
 }
 
