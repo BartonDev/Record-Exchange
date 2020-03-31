@@ -140,7 +140,7 @@ class UniversalTrack extends Track {
 
         this.genres = appleTrack.genres
 
-        this.id = IdHash.createUniversalTrackId(this.spotifyId, this.appleId)
+        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId)
     }
 
     toFirestoreData(): any{
@@ -295,7 +295,7 @@ class UniversalAlbum extends Album {
         this.coverImage = spotifyAlbum.coverImage
         this.genres = appleAlbum.genres
 
-        this.id = ''
+        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId)
 
         //TODO: probably a cleaner way to do this
         let spotifyTracks = spotifyAlbum.tracks
@@ -1138,9 +1138,9 @@ export const TEST6 = functions.https.onRequest((req, res) => {
     // let num = 6987790567
     // let num = 9999999999
 
-    let universalId = IdHash.createUniversalTrackId(spotifyId, appleId)
+    let universalId = IdHash.createUniversalId(spotifyId, appleId)
 
-    let decodedIds = IdHash.decodeUniversalTrackId(universalId)
+    let decodedIds = IdHash.decodeUniversalId(universalId)
 
     let response = {
         preSpotify: spotifyId,
@@ -1374,18 +1374,12 @@ function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):any{
         .then((spotifyAlbum:SpotifyAlbum) =>{
             searchAppleAlbum(spotifyAlbum.baseAlbum())
             .then((appleAlbum:AppleAlbum)=>{
-                console.log('12',appleAlbum)
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
-                console.log('13',universalAlbum)
-
                 storeUniversalAlbum(universalAlbum)
-                .then((docId:any)=>{
-                    
-                    universalAlbum.id = docId
+                .then(()=>{
                     resolve(universalAlbum)
                 })
                 .catch((error:Error)=>{
-                    console.log("PISS")
                 })
             })
         })
@@ -1405,8 +1399,7 @@ function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any{
             .then((spotifyAlbum: SpotifyAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
                 storeUniversalAlbum(universalAlbum)
-                .then((docId:any)=>{
-                    universalAlbum.id = docId
+                .then(()=>{
                     resolve(universalAlbum)
                 })
             })
@@ -1552,6 +1545,9 @@ function storeUniversalTracks (tracks: Array<UniversalTrack>): any {
                             reject(error)
                         })
                     }
+                    else {
+                        resolve()
+                    }
                 })
                 .catch((error:Error) =>{
                     reject(error)
@@ -1576,7 +1572,7 @@ function storeUniversalTracks (tracks: Array<UniversalTrack>): any {
 function storeUniversalAlbum(album: UniversalAlbum):any {
     if (!admin.apps.length) {
         admin.initializeApp();
-    } 
+    }
 
     let tracksPromise = new Promise (function(resolve, reject) {
         storeUniversalTracks(album.tracks)
@@ -1589,9 +1585,9 @@ function storeUniversalAlbum(album: UniversalAlbum):any {
     })
 
     let albumPromise = new Promise (function(resolve, reject){
-        admin.firestore().collection("albums").add(album.toFirestoreData())
-        .then(function(docRef) {
-            resolve(docRef.id)
+        admin.firestore().collection("albums").doc(album.id).set(album.toFirestoreData())
+        .then(function() {
+            resolve()
         })
         .catch(function(error) {
             reject(error)
@@ -1599,11 +1595,21 @@ function storeUniversalAlbum(album: UniversalAlbum):any {
     })
 
     return new Promise (function (resolve, reject) {
-        Promise.all([tracksPromise, albumPromise])
-        .then((promisedValues:any)=>{
-            resolve(promisedValues[1])
+        admin.firestore().collection("tracks").doc(album.id).get()
+        .then(function(doc:any) {
+            if (!doc.exists) {
+                Promise.all([tracksPromise, albumPromise])
+                .then(()=>{
+                    resolve()
+                })
+                .catch((error:Error)=>{
+                    reject(error)
+                })
+            } else {
+                resolve()
+            }
         })
-        .catch((error:Error)=>{
+        .catch((error:Error) =>{
             reject(error)
         })
     })

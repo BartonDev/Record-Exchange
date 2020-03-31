@@ -65,7 +65,7 @@ export module IdHash {
         return returnNumber
     }
 
-    export function createUniversalTrackId (spotifyId: string, appleId: string) : string {
+    export function createUniversalId (spotifyId: string, appleId: string) : string {
         let parsedId = parseInt(appleId, 10);
         if (isNaN(parsedId)) { return "" }
         let appleIdHashed = hashAppleId(parsedId)
@@ -73,7 +73,7 @@ export module IdHash {
         return universalId
     }
 
-    export function decodeUniversalTrackId (universalId: string): any {
+    export function decodeUniversalId (universalId: string): any {
         if (universalId.length != 28){ return "" }
         let spotifyId = universalId.substring(0, 22)
         let appleIdHashed = universalId.substring(22)
