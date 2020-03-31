@@ -135,10 +135,10 @@ export module Spotify {
         tracks: Tracks;
     }
 
-    export interface TokenResponse {
-        access_token: string;
-        token_type: string;
-    }
+    // export interface TokenResponse {
+    //     access_token: string;
+    //     token_type: string;
+    // }
 
     export interface AlbumTrack {
         artists: Artist[];

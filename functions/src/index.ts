@@ -3,7 +3,9 @@ import * as admin from 'firebase-admin';
 
 import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
-import {ColorPalete, getPaletteFromUrl} from './ColorPalette'
+import {SpotifyToken, getSpotifyToken} from "./SpotifyTokenManager"
+
+// import {ColorPalete, getPaletteFromUrl} from './ColorPalette'
 
 // import Vibrant = require('node-vibrant')
 // import { ResultStorage } from 'firebase-functions/lib/providers/testLab';
@@ -33,31 +35,17 @@ enum ObjectType {
 
 //CLASSES
 
-// class colorPallete {
-
-// }
-
-// class Swatch
-
-class SpotifyToken {
-    token: string
-
-    constructor (data:Spotify.TokenResponse){
-        this.token = data.token_type + " " + data.access_token
-    }
-}
-
-class ParsedUrl {
-    serviceType: ServiceType
-    objectType: ObjectType
-    id: string
+// class ParsedUrl {
+//     serviceType: ServiceType
+//     objectType: ObjectType
+//     id: string
     
-    constructor(serviceType:ServiceType, objectType:ObjectType, id:string){
-        this.serviceType = serviceType
-        this.objectType = objectType
-        this.id = id
-    }
-}
+//     constructor(serviceType:ServiceType, objectType:ObjectType, id:string){
+//         this.serviceType = serviceType
+//         this.objectType = objectType
+//         this.id = id
+//     }
+// }
 
 class Track {
     name: string
@@ -759,120 +747,55 @@ export const fetchAlbum = functions.https.onRequest((req,res) =>{
     })
 })
 
-export const test = functions.https.onRequest((request, response) => {
-    const url = 'https://music.apple.com/us/album/me-my-dog/1438946531?i=1438946537'
-    // const url = 'https://open.spotify.com/album/3wRBlpk5PRoixwOnLujTal?si=aQAL9xwmQAmDY_gL0lKoEg'
-    // const url = 'https://open.spotify.com/album/28fJkC8VzTy7IXxTriq8fd?si=rZ99_h9XRTaG3SWtsyMOhQ'
-
-    // const url = 'https://open.spotify.com/track/03hUwBvGTrQpHpvE4pO2oq?si=Ss8GSZH-QQ6Boafmd2B-PA'
-
-    // const url = 'https://music.apple.com/us/playlist/test/pl.u-xlyNEdNCXV9zk5'
-    // const url = 'https://open.spotify.com/playlist/053IhHPaTtzkmmSUovoZj3?si=yTRju2YcQC2ljC_N86auag'
-
-    let parsePromise = parseUrl(url)
-    let spotifyTokenPromise = getSpotifyToken()
-    Promise.all([parsePromise, spotifyTokenPromise])
-    .then( values => {
-        let parsedUrl = <ParsedUrl>values[0]
-        let spotifyToken = <SpotifyToken>values[1]
-        if (parsedUrl.serviceType == ServiceType.spotify){
-            if (parsedUrl.objectType == ObjectType.track){
-                spotifyTrackToUniversal(parsedUrl.id, spotifyToken)
-                .then((result:any) => {
-                    response.send(result)
-                }).catch ((error:Error) => {
-                    response.send(error)
-                })
-            } else if (parsedUrl.objectType == ObjectType.album){
-                spotifyAlbumToUniversal(parsedUrl.id, spotifyToken)
-                .then((result:any) =>{
-                    response.send(result)
-                }).catch((error:Error)=>{
-                    response.send(error)
-                })
-            } else if (parsedUrl.objectType == ObjectType.playlist){
-                spotifyPlaylistToUniversal(parsedUrl.id, spotifyToken)
-                .then((universalPlaylist:UniversalPlaylist) => {
-                    response.send(universalPlaylist)
-                }).catch ((error:Error) => {
-                    response.send(error)
-                })
-            }
-        } else if (parsedUrl.serviceType == ServiceType.apple){
-            if (parsedUrl.objectType == ObjectType.track){
-                console.log(parsedUrl.id)
-                appleTrackToUniversal(parsedUrl.id, spotifyToken)
-                .then((data:any) =>{
-                    response.send(data)
-                }).catch((error:Error) => {
-                    response.send(error)
-                })
-            } else if (parsedUrl.objectType == ObjectType.album){
-                //
-            } else if (parsedUrl.objectType == ObjectType.playlist){
-                applePlaylistToUniversal(parsedUrl.id, spotifyToken)
-                .then((universalPlaylist:UniversalPlaylist) => {
-                    response.send(universalPlaylist)
-                }).catch ((error:Error) => {
-                    response.send(error)
-                })
-            }
-        }
-    })
-    .catch((error:Error) => {
-       
-    })
-});
-
-function parseUrl (url: string): any {
-    //TODO: rework with REGEX, currently not handling edge cases
-    return new Promise (function (resolve, reject) {
-        if (url.search('open.spotify.com') != -1){
-            if (url.search('track/') != -1 ){
-                let startIndex = url.search('track/') + 6
-                let endIndex = startIndex + 22
-                let id = url.substring(startIndex, endIndex)
-                let parsedUrl = new ParsedUrl(ServiceType.spotify, ObjectType.track, id)
-                resolve(parsedUrl)
-            } else if (url.search('album/') != -1 ){
-                let startIndex = url.search('album/') + 6
-                let endIndex = startIndex + 22
-                let id = url.substring(startIndex, endIndex)
-                let parsedUrl = new ParsedUrl(ServiceType.spotify, ObjectType.album, id)
-                resolve(parsedUrl)
-            } else if (url.search('playlist/') != -1 ){
-                let startIndex = url.search('playlist/') + 9
-                let endIndex = startIndex + 22
-                let id = url.substring(startIndex, endIndex)
-                let parsedUrl = new ParsedUrl(ServiceType.spotify, ObjectType.playlist, id)
-                resolve(parsedUrl)
-            }
-        } else if (url.search('music.apple.com') != -1){
-            if (url.search('album/') != -1){
-                if (url.search('i=') != -1){
-                    let startIndex = url.search('i=') + 2
-                    let endIndex = startIndex + 10
-                    let id = url.substring(startIndex, endIndex)
-                    let parsedUrl = new ParsedUrl(ServiceType.apple, ObjectType.track, id)
-                    resolve(parsedUrl)
-                } else {
-                    let startIndex = url.search('album/')
-                    let endIndex = startIndex + 10
-                    let id = url.substring(startIndex, endIndex)
-                    let parsedUrl = new ParsedUrl(ServiceType.apple, ObjectType.album, id)
-                    resolve(parsedUrl)
-                }                
-            } else if (url.search('playlist/') != -1){
-                let startIndex = url.search('pl.u-')
-                let endIndex = startIndex + 19
-                let id = url.substring(startIndex, endIndex)
-                let parsedUrl = new ParsedUrl(ServiceType.apple, ObjectType.playlist, id)
-                resolve(parsedUrl)
-            }
-        }
-        reject()
-    })
-}
+// function parseUrl (url: string): any {
+//     //TODO: rework with REGEX, currently not handling edge cases
+//     return new Promise (function (resolve, reject) {
+//         if (url.search('open.spotify.com') != -1){
+//             if (url.search('track/') != -1 ){
+//                 let startIndex = url.search('track/') + 6
+//                 let endIndex = startIndex + 22
+//                 let id = url.substring(startIndex, endIndex)
+//                 let parsedUrl = new ParsedUrl(ServiceType.spotify, ObjectType.track, id)
+//                 resolve(parsedUrl)
+//             } else if (url.search('album/') != -1 ){
+//                 let startIndex = url.search('album/') + 6
+//                 let endIndex = startIndex + 22
+//                 let id = url.substring(startIndex, endIndex)
+//                 let parsedUrl = new ParsedUrl(ServiceType.spotify, ObjectType.album, id)
+//                 resolve(parsedUrl)
+//             } else if (url.search('playlist/') != -1 ){
+//                 let startIndex = url.search('playlist/') + 9
+//                 let endIndex = startIndex + 22
+//                 let id = url.substring(startIndex, endIndex)
+//                 let parsedUrl = new ParsedUrl(ServiceType.spotify, ObjectType.playlist, id)
+//                 resolve(parsedUrl)
+//             }
+//         } else if (url.search('music.apple.com') != -1){
+//             if (url.search('album/') != -1){
+//                 if (url.search('i=') != -1){
+//                     let startIndex = url.search('i=') + 2
+//                     let endIndex = startIndex + 10
+//                     let id = url.substring(startIndex, endIndex)
+//                     let parsedUrl = new ParsedUrl(ServiceType.apple, ObjectType.track, id)
+//                     resolve(parsedUrl)
+//                 } else {
+//                     let startIndex = url.search('album/')
+//                     let endIndex = startIndex + 10
+//                     let id = url.substring(startIndex, endIndex)
+//                     let parsedUrl = new ParsedUrl(ServiceType.apple, ObjectType.album, id)
+//                     resolve(parsedUrl)
+//                 }                
+//             } else if (url.search('playlist/') != -1){
+//                 let startIndex = url.search('pl.u-')
+//                 let endIndex = startIndex + 19
+//                 let id = url.substring(startIndex, endIndex)
+//                 let parsedUrl = new ParsedUrl(ServiceType.apple, ObjectType.playlist, id)
+//                 resolve(parsedUrl)
+//             }
+//         }
+//         reject()
+//     })
+// }
 
 //SEARCHS
 
@@ -983,7 +906,6 @@ function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
         .then( (res:any) => res.json())
         .then( (data:any) => {
             let parsedResponse = <Spotify.AlbumSearchResponse>data
-            // let albums = parsedResponse.albums.items
             for (let albumPreviewData of parsedResponse.albums.items){
                 let comparisonAlbum = new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
                 let matchValue = searchAlbum.compare(comparisonAlbum)
@@ -1062,171 +984,6 @@ function searchAppleAlbum (searchAlbum:Album):any{
 }
 
 //GETTERS
-
-export const TEST2 = functions.https.onRequest((req, res) => {
-    let example = new Album('Talon of the Hawk', 'The Front Bottoms')
-    searchAppleAlbum(example)
-    .then((data:any) =>{
-        console.log("end", data)
-        res.send(data)
-    })
-    .catch((error:Error)=>{
-        res.send(error)
-    })
-
-})
-
-export const TEST3 = functions.https.onRequest((req, res) => {
-
-    //spotify:album:1v7hBIWUmfhggbxYd9HIW7
-    let example = new Album('Talon of the Hawk', 'The Front Bottoms')
-    getSpotifyToken()
-    .then((spotifyToken:SpotifyToken) =>{
-
-        // SpotifyAlbumToUniversal('1v7hBIWUmfhggbxYd9HIW7',spotifyToken)
-        searchSpotifyAlbum(example, spotifyToken)
-        .then((data:any) =>{
-            res.send(data)
-        })
-        .catch((error:Error)=>{
-            res.send(error)
-        })
-    })
-    
-
-})
-
-//fetchAlbumFirestore
-
-export const TEST4 = functions.https.onRequest((req, res) => {
-
-    //spotify:album:1v7hBIWUmfhggbxYd9HIW7
-
-    fetchAlbumFirestore('DNUKzrAz7JwXyBh63oKn', ServiceType.spotify)
-    .then((data:any)=>{
-        res.send(data)
-    })
-    .catch((error:Error)=>{
-        res.send(error)
-    })    
-
-})
-
-export const TEST5 = functions.https.onRequest((req, res) => {
-
-    //spotify:album:1v7hBIWUmfhggbxYd9HIW7
-
-    // fetchAlbumFirestore('DNUKzrAz7JwXyBh63oKn', ServiceType.spotify)
-    // .then((data:any)=>{
-    //     res.send(data)
-    // })
-    // .catch((error:Error)=>{
-    //     res.send(error)
-    // })    
-
-    if (!admin.apps.length) {
-        admin.initializeApp();
-    } 
-    return new Promise (function (resolve, reject) {
-        admin.firestore().collection("test").doc("ababababababababababababab").set({
-            test:'test'
-        })
-        .then(function(docRef) {
-            // console.log("Document written with ID: ", docRef);
-            res.send('succ')
-        })
-        .catch(function(error) {
-            // console.error("Error adding document: ", error);
-            res.send(error)
-        });
-    })
-
-})
-
-export const TEST6 = functions.https.onRequest((req, res) => {
-    let appleId = '1476463542'
-    let spotifyId = '77G0k1La0c5Dw8bAFANcyp'
-    // let num = 6987790567
-    // let num = 9999999999
-
-    let universalId = IdHash.createUniversalId(spotifyId, appleId)
-
-    let decodedIds = IdHash.decodeUniversalId(universalId)
-
-    let response = {
-        preSpotify: spotifyId,
-        preApple: appleId,
-        universal: universalId,
-        postSpotify: decodedIds.spotifyId,
-        postApple: decodedIds.appleId
-
-    }
-    res.send(response)
-}) 
-
-export const TEST7 = functions.https.onRequest((req, res) => {
-    const url = 'https://mosaic.scdn.co/640/ab67616d0000b2734d9f7b88e82db31d13ac6668ab67616d0000b2736f053f270098b9a5cf9f14deab67616d0000b273a95f3ce3609b1bb019e01696ab67616d0000b273cd8c5684a88874b97247fa4a'
-    getPaletteFromUrl(url)
-    .then((colorPalette:ColorPalete)=>{
-        res.send(colorPalette)
-    })
-    .catch((error:Error) =>{
-        res.send(error)
-    })
-}) 
-
-
-
-// class ColorPallete {
-
-//     vibrant: string
-//     lightVibrant: string
-//     darkVibrant: string
-//     muted: string
-//     lightMuted: string
-//     darkMuted: string
-//     // vibrant
-
-//     primaryColor: string
-//     secondaryColor: string
-//     primaryVibrant: string
-//     primaryMuted: string
-
-//     constructor(palette:Vibrant.VibrantResponse){
-//         var topColor = 0
-//         var topVibrant = 0
-//         var topMuted = 0 
-
-//         this.vibrant = rgbToHex(palette.Vibrant.rgb)
-//         this.lightVibrant = rgbToHex(palette.LightVibrant.rgb)
-//         this.darkVibrant = rgbToHex(palette.DarkVibrant.rgb)
-
-//         let vibrantPopulation = palette.Vibrant.population
-//         topColor = vibrantPopulation
-//         topVibrant = vibrantPopulation
-
-//         this.muted = rgbToHex(palette.Muted.rgb)
-//         this.lightMuted = rgbToHex(palette.LightMuted.rgb)
-//         this.darkMuted = rgbToHex(palette.DarkMuted.rgb)
-//     }
-// }
-
-// function rgbToHex (colors:Array<number>): string{
-//     var redHex = numberToHex(colors[0]);
-//     var greenHex = numberToHex(colors[1]);
-//     var blueHex = numberToHex(colors[2]);
-//     return "#"+redHex+greenHex+blueHex;
-// }
-
-// function numberToHex (num:number): string{
-//     var hex = Number(num).toString(16);
-//     if (hex.length < 2) {
-//         hex = "0" + hex;
-//     }
-//     return hex;
-// }
-
-
 
 function getSpotifyTrack (trackId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
@@ -1587,7 +1344,6 @@ function storeUniversalTrack (track: UniversalTrack): any {
     } 
 
     return new Promise (function (resolve, reject) {
-        console.log("OKEY DOKEY DONKEY", track.id)
         admin.firestore().collection("tracks").doc(track.id).set(track.toFirestoreData())
         .then(function() {
             resolve()
@@ -1698,7 +1454,6 @@ function storeUniversalPlaylist (playlist: UniversalPlaylist): any {
     return new Promise (function (resolve, reject) {
         admin.firestore().collection("playlists").add(playlist.toFirestoreData())
         .then(function(docRef) {
-            // console.log('DOCRED', docRef)
             resolve(docRef.id)
         })
         .catch(function(error) {
@@ -1729,6 +1484,7 @@ function fetchPlaylistFirestore (playlistId: string): any{
     })
 }
 
+/*
 function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
     return new Promise (function(resolve, reject) {
         if (!admin.apps.length) {
@@ -1755,9 +1511,6 @@ function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
                 if (!querySnapshot.empty){
                     let doc = querySnapshot.docs[0]
                     resolve(doc.data())
-                    // let docData = <Firestore.FirestoreTrackData> doc.data()
-                    // let universalTrack = new FirestoreUniversalTrack(docData, doc.id)
-                    // resolve(universalTrack)
                 } else {
                     reject()
                 }
@@ -1776,7 +1529,7 @@ function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
             });
         }
     })
-}
+}*/
 
 function fetchTrackFirestore(id: string, serviceType?:ServiceType):any{
     return new Promise (function(resolve, reject) {
@@ -1826,31 +1579,31 @@ function fetchTrackFirestore(id: string, serviceType?:ServiceType):any{
 
 //TOKEN
 
-function getSpotifyToken (): any {
-    return new Promise (function (resolve, reject) {
-        const clientSecret = '36e635baad4c4430a5b04b4d45bd32ea'
-        const clientId = 'a46438b4ef724143bd34928fee96a742'
+// function getSpotifyToken (): any {
+//     return new Promise (function (resolve, reject) {
+//         const clientSecret = '36e635baad4c4430a5b04b4d45bd32ea'
+//         const clientId = 'a46438b4ef724143bd34928fee96a742'
 
-        const url = 'https://accounts.spotify.com/api/token'
-        const options = {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `grant_type=client_credentials&client_secret=${clientSecret}&client_id=${clientId}`
-            // body: 'grant_type=client_credentials&client_secret=36e635baad4c4430a5b04b4d45bd32ea&client_id=a46438b4ef724143bd34928fee96a742'
-        }
+//         const url = 'https://accounts.spotify.com/api/token'
+//         const options = {
+//             method: 'POST',
+//             headers: {
+//               'Content-Type': 'application/x-www-form-urlencoded'
+//             },
+//             body: `grant_type=client_credentials&client_secret=${clientSecret}&client_id=${clientId}`
+//             // body: 'grant_type=client_credentials&client_secret=36e635baad4c4430a5b04b4d45bd32ea&client_id=a46438b4ef724143bd34928fee96a742'
+//         }
 
-        fetch(url, options)
-        .then((res:any) => res.json())
-        .then((data:any) => {
-            let spotifyToken = new SpotifyToken(<Spotify.TokenResponse> data)
-            resolve(spotifyToken)
-        })
-        .catch((error:Error) =>{
-            reject(error)
-        })
-    })
-}
+//         fetch(url, options)
+//         .then((res:any) => res.json())
+//         .then((data:any) => {
+//             let spotifyToken = new SpotifyToken(<Spotify.TokenResponse> data)
+//             resolve(spotifyToken)
+//         })
+//         .catch((error:Error) =>{
+//             reject(error)
+//         })
+//     })
+// }
 
 
