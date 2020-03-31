@@ -3,7 +3,12 @@ import * as admin from 'firebase-admin';
 
 import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
+import {ColorPalete, getPaletteFromUrl} from './ColorPalette'
 
+// import Vibrant = require('node-vibrant')
+// import { ResultStorage } from 'firebase-functions/lib/providers/testLab';
+
+// const request = require('request').defaults({encoding:null});
 const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
 
@@ -27,6 +32,12 @@ enum ObjectType {
 }
 
 //CLASSES
+
+// class colorPallete {
+
+// }
+
+// class Swatch
 
 class SpotifyToken {
     token: string
@@ -1153,6 +1164,70 @@ export const TEST6 = functions.https.onRequest((req, res) => {
     res.send(response)
 }) 
 
+export const TEST7 = functions.https.onRequest((req, res) => {
+    const url = 'https://mosaic.scdn.co/640/ab67616d0000b2734d9f7b88e82db31d13ac6668ab67616d0000b2736f053f270098b9a5cf9f14deab67616d0000b273a95f3ce3609b1bb019e01696ab67616d0000b273cd8c5684a88874b97247fa4a'
+    getPaletteFromUrl(url)
+    .then((colorPalette:ColorPalete)=>{
+        res.send(colorPalette)
+    })
+    .catch((error:Error) =>{
+        res.send(error)
+    })
+}) 
+
+
+
+// class ColorPallete {
+
+//     vibrant: string
+//     lightVibrant: string
+//     darkVibrant: string
+//     muted: string
+//     lightMuted: string
+//     darkMuted: string
+//     // vibrant
+
+//     primaryColor: string
+//     secondaryColor: string
+//     primaryVibrant: string
+//     primaryMuted: string
+
+//     constructor(palette:Vibrant.VibrantResponse){
+//         var topColor = 0
+//         var topVibrant = 0
+//         var topMuted = 0 
+
+//         this.vibrant = rgbToHex(palette.Vibrant.rgb)
+//         this.lightVibrant = rgbToHex(palette.LightVibrant.rgb)
+//         this.darkVibrant = rgbToHex(palette.DarkVibrant.rgb)
+
+//         let vibrantPopulation = palette.Vibrant.population
+//         topColor = vibrantPopulation
+//         topVibrant = vibrantPopulation
+
+//         this.muted = rgbToHex(palette.Muted.rgb)
+//         this.lightMuted = rgbToHex(palette.LightMuted.rgb)
+//         this.darkMuted = rgbToHex(palette.DarkMuted.rgb)
+//     }
+// }
+
+// function rgbToHex (colors:Array<number>): string{
+//     var redHex = numberToHex(colors[0]);
+//     var greenHex = numberToHex(colors[1]);
+//     var blueHex = numberToHex(colors[2]);
+//     return "#"+redHex+greenHex+blueHex;
+// }
+
+// function numberToHex (num:number): string{
+//     var hex = Number(num).toString(16);
+//     if (hex.length < 2) {
+//         hex = "0" + hex;
+//     }
+//     return hex;
+// }
+
+
+
 function getSpotifyTrack (trackId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
         const url = `https://api.spotify.com/v1/tracks/${trackId}`
@@ -1777,3 +1852,5 @@ function getSpotifyToken (): any {
         })
     })
 }
+
+
