@@ -4,6 +4,8 @@ import * as admin from 'firebase-admin';
 import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
 import {SpotifyToken, getSpotifyToken} from "./SpotifyTokenManager"
+import {ServiceType, ObjectType} from "./musicEnums"
+
 
 // import {ColorPalete, getPaletteFromUrl} from './ColorPalette'
 
@@ -23,15 +25,15 @@ const APPLETOKEN = 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldWN1IyNEdVNkgi
 //ENUMS
 
 enum MatchValue {match, nonMatch, exactMatch }
-enum ServiceType {
-    spotify = 'spotify', 
-    apple = 'apple'
-}
-enum ObjectType {
-    track = 'track', 
-    album = 'album', 
-    playlist = 'playlist'
-}
+// enum ServiceType {
+//     spotify = 'spotify', 
+//     apple = 'apple'
+// }
+// enum ObjectType {
+//     track = 'track', 
+//     album = 'album', 
+//     playlist = 'playlist'
+// }
 
 //CLASSES
 
@@ -139,7 +141,7 @@ class UniversalTrack extends Track {
 
         this.genres = appleTrack.genres
 
-        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId)
+        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.track)
     }
 
     toFirestoreData(): any{
@@ -294,7 +296,7 @@ class UniversalAlbum extends Album {
         this.coverImage = spotifyAlbum.coverImage
         this.genres = appleAlbum.genres
 
-        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId)
+        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.album)
 
         //TODO: probably a cleaner way to do this
         let spotifyTracks = spotifyAlbum.tracks
@@ -737,7 +739,7 @@ export const fetchTrack = functions.https.onRequest((req,res) =>{
 
 export const fetchAlbum = functions.https.onRequest((req,res) =>{
     return cors(req, res, () => {
-        fetchTrackFirestore(req.body.id)
+        fetchAlbumFirestore(req.body.id)
         .then((docData: any) =>{
             res.status(200).send(docData)
         })
@@ -918,7 +920,6 @@ function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
             
             getSpotifyAlbum(spotifyAlbumId, token)
             .then((spotifyAlbum:SpotifyAlbum) =>{
-                console.log('ablum', spotifyAlbum)
                 resolve(spotifyAlbum)
             })
             .catch((error:Error) =>{
@@ -969,7 +970,6 @@ function searchAppleAlbum (searchAlbum:Album):any{
 
             getAppleAlbum(appleAlbumId)
             .then((appleAlbum:AppleAlbum) =>{
-                console.log('ablum2', appleAlbum)
                 resolve(appleAlbum)
             })
             .catch((error:Error) =>{
@@ -1484,7 +1484,7 @@ function fetchPlaylistFirestore (playlistId: string): any{
     })
 }
 
-/*
+
 function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
     return new Promise (function(resolve, reject) {
         if (!admin.apps.length) {
@@ -1529,7 +1529,7 @@ function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
             });
         }
     })
-}*/
+}
 
 function fetchTrackFirestore(id: string, serviceType?:ServiceType):any{
     return new Promise (function(resolve, reject) {

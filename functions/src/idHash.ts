@@ -1,3 +1,5 @@
+import {ObjectType} from "./musicEnums"
+
 export module IdHash {
 
     function numberToCharacter(num: number): string{
@@ -65,23 +67,37 @@ export module IdHash {
         return returnNumber
     }
 
-    export function createUniversalId (spotifyId: string, appleId: string) : string {
+    export function createUniversalId (spotifyId: string, appleId: string, objectType: ObjectType) : string {
+        var objectId = "00"
+        if (objectType == ObjectType.track) {
+            objectId = "tr"
+        } else if (objectType == ObjectType.album){
+            objectId = "ab"
+        }
         let parsedId = parseInt(appleId, 10);
         if (isNaN(parsedId)) { return "" }
         let appleIdHashed = hashAppleId(parsedId)
-        let universalId = spotifyId.concat(appleIdHashed)
+        let universalId = objectId.concat(spotifyId, appleIdHashed)
         return universalId
     }
 
     export function decodeUniversalId (universalId: string): any {
-        if (universalId.length != 28){ return "" }
-        let spotifyId = universalId.substring(0, 22)
-        let appleIdHashed = universalId.substring(22)
+        if (universalId.length != 30){ return "" }
+        let objectId = universalId.substring(0, 2)
+        var objectType:any = ""
+        if (objectId == "tr") {
+            objectType = ObjectType.track
+        } else if (objectId == "ab") {
+            objectType = ObjectType.album
+        }
+        let spotifyId = universalId.substring(2, 24)
+        let appleIdHashed = universalId.substring(24)
         let appleId = unhashAppleId(appleIdHashed)
         
         let returnData = {
             spotifyId: spotifyId,
-            appleId: appleId
+            appleId: appleId,
+            objectType: objectType
         }
 
         return returnData
