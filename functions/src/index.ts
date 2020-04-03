@@ -749,6 +749,52 @@ export const fetchAlbum = functions.https.onRequest((req,res) =>{
     })
 })
 
+export const test1 = functions.https.onRequest((req, res) =>{
+    return cors(req, res, () => {
+        const clientId = 'a46438b4ef724143bd34928fee96a742'; // Your client id
+        const redirectUri = 'http://localhost:3000/spotifyCallback'; // Your redirect uri
+        const state = "abcdefg";
+        const scope = 'user-read-private user-read-email';
+    
+        var url = 'https://accounts.spotify.com/authorize';
+        url += '?response_type=token';
+        url += '&client_id=' + encodeURIComponent(clientId);
+        url += '&scope=' + encodeURIComponent(scope);
+        url += '&redirect_uri=' + encodeURIComponent(redirectUri);
+        url += '&state=' + encodeURIComponent(state);
+    
+        res.send(url)
+    })
+    // const clientSecret = '36e635baad4c4430a5b04b4d45bd32ea'
+    //http://localhost:3000/#access_token=BQBxjhPRU_aNivQE6Vxtzy3HdI2RzczuLUU-TGoxKgx4YzjYqoxRvZ5SuEuy7_YimjX-NT0FbTUders3RSLVRrRHoFmZFoY8bLSEX1ahMhzP14s-lh2bRKSsOmmEDOtYEdOtKJLrwXa7zJv3pJeTsRYeamInYM2-Zpsq4bF6HV6gyn6tCF5qZhkl2I2PDNr9G-L7LU62eUsc6OesAw&token_type=Bearer&expires_in=3600&state=abcdefg
+    
+    // const clientSecret = '36e635baad4c4430a5b04b4d45bd32ea'
+    // const clientId = 'a46438b4ef724143bd34928fee96a742'
+    // const url = 'https://accounts.spotify.com/authorize'
+    // const uri = 'localhost:3000'
+    // const options = {
+    //     method: 'GET',
+    //     headers: {
+    //         'Content-Type': 'application/x-www-form-urlencoded'
+    //     },
+    //     // body: `grant_type=client_credentials&client_secret=${clientSecret}&client_id=${clientId}`
+    // }
+
+    // fetch(url, options)
+    // .then((res:any) => res.json())
+    // .then((data:any) => {
+    //     console.log(data)
+    //     res.send(data)
+    //     // let spotifyToken = new SpotifyToken(<TokenResponse> data)
+    //     // resolve(spotifyToken)
+    // })
+    // .catch((error:Error) =>{
+    //     console.log(error)
+    //     res.end(error)
+    //     // reject(error)
+    // })
+})
+
 // function parseUrl (url: string): any {
 //     //TODO: rework with REGEX, currently not handling edge cases
 //     return new Promise (function (resolve, reject) {

@@ -20,7 +20,6 @@ export function getSpotifyToken (): any {
               'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: `grant_type=client_credentials&client_secret=${clientSecret}&client_id=${clientId}`
-            // body: 'grant_type=client_credentials&client_secret=36e635baad4c4430a5b04b4d45bd32ea&client_id=a46438b4ef724143bd34928fee96a742'
         }
 
         fetch(url, options)
