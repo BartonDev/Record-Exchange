@@ -503,6 +503,50 @@ class UniversalPlaylist extends Playlist{
     }
 }
 
+class FirestoreUniversalPlaylist extends Playlist implements UniversalPlaylist{
+    id: string;
+    tracks: Array<UniversalTrack>;
+
+    constructor(data: Firestore.FirestorePlaylistData, playlistId: string){
+        let name = data.name
+        let description = data.description
+        let coverImage = data.coverImage
+        super(name, description, coverImage)
+
+        this.id = playlistId
+        var tracks = new Array<UniversalTrack>()
+        for (let trackData of data.tracks){
+            let trackId = IdHash.createUniversalId(trackData.spotifyId, trackData.appleId, ObjectType.track)
+            let newTrack = new FirestoreUniversalTrack(trackData, trackId)
+            tracks.push(newTrack)
+        }
+        this.tracks = tracks
+    }
+
+    toFirestoreData(): any{
+        var firestoreTracks = Array<any>()
+        for (let track of this.tracks){
+            let trackData = {
+                id: track.id,
+                name: track.name,
+                artist: track.artist,
+                album: track.album,
+                coverImage: track.coverImage,
+                spotifyId: track.spotifyId,
+                appleId: track.appleId,
+            }
+            firestoreTracks.push(trackData)
+        }
+
+        return ({  
+            name: this.name,
+            description: this.description,
+            coverImage: this.coverImage,
+            tracks: firestoreTracks
+        })
+    }
+}
+
 // export const processUrl = functions.https.onRequest((req, res)=> {
 //     return cors(req, res, () => {
 //         parseUrl(req.body.url)
@@ -753,9 +797,12 @@ export const test1 = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         const clientId = 'a46438b4ef724143bd34928fee96a742'; // Your client id
         const redirectUri = 'http://localhost:3000/spotifyCallback'; // Your redirect uri
+        // const stateKey = 'spotify_auth_state';
         const state = "abcdefg";
-        const scope = 'user-read-private user-read-email';
+        const scope = 'user-read-private playlist-modify-private';
     
+        // localStorage.setItem(stateKey, state);
+
         var url = 'https://accounts.spotify.com/authorize';
         url += '?response_type=token';
         url += '&client_id=' + encodeURIComponent(clientId);
@@ -765,35 +812,143 @@ export const test1 = functions.https.onRequest((req, res) =>{
     
         res.send(url)
     })
-    // const clientSecret = '36e635baad4c4430a5b04b4d45bd32ea'
-    //http://localhost:3000/#access_token=BQBxjhPRU_aNivQE6Vxtzy3HdI2RzczuLUU-TGoxKgx4YzjYqoxRvZ5SuEuy7_YimjX-NT0FbTUders3RSLVRrRHoFmZFoY8bLSEX1ahMhzP14s-lh2bRKSsOmmEDOtYEdOtKJLrwXa7zJv3pJeTsRYeamInYM2-Zpsq4bF6HV6gyn6tCF5qZhkl2I2PDNr9G-L7LU62eUsc6OesAw&token_type=Bearer&expires_in=3600&state=abcdefg
-    
-    // const clientSecret = '36e635baad4c4430a5b04b4d45bd32ea'
-    // const clientId = 'a46438b4ef724143bd34928fee96a742'
-    // const url = 'https://accounts.spotify.com/authorize'
-    // const uri = 'localhost:3000'
-    // const options = {
-    //     method: 'GET',
-    //     headers: {
-    //         'Content-Type': 'application/x-www-form-urlencoded'
-    //     },
-    //     // body: `grant_type=client_credentials&client_secret=${clientSecret}&client_id=${clientId}`
-    // }
-
-    // fetch(url, options)
-    // .then((res:any) => res.json())
-    // .then((data:any) => {
-    //     console.log(data)
-    //     res.send(data)
-    //     // let spotifyToken = new SpotifyToken(<TokenResponse> data)
-    //     // resolve(spotifyToken)
-    // })
-    // .catch((error:Error) =>{
-    //     console.log(error)
-    //     res.end(error)
-    //     // reject(error)
-    // })
 })
+
+export const test2 = functions.https.onRequest((req, res) =>{
+    return cors(req, res, () => {
+        let authCode =  req.body.authorizationCode
+        console.log(authCode)
+        // res.send(authCode)
+
+        // const url = "https://api.spotify.com/v1/users//playlists"
+        const url = "https://api.spotify.com/v1/me"
+
+        const options = {
+            method: 'GET',
+            headers: {
+                Authorization: authCode,
+                "Content-Type": 'application/x-www-form-urlencoded',
+            },
+            // body: "{\"name\":\"A New Playlist\", \"public\":false}"
+        };
+
+        fetchPlaylistFirestore('0xn8IEEaAhTOjPtWvBYh')
+        .then((data: any) =>{
+            // console.log(JSON.stringify(docData))
+            let parsedData = <Firestore.FirestorePlaylistData> data
+            let playlist = new FirestoreUniversalPlaylist(parsedData, '0xn8IEEaAhTOjPtWvBYh')
+
+            fetch(url, options)
+            .then( (res:any) => res.json())
+            .then( (data:any) => {
+                console.log("return", data)
+                let userId = data.id
+                makePlaylist(authCode, userId, playlist)
+                .then((data:any) => console.log("return2", data))
+            })
+            .catch((error:Error) => {
+                console.log("error", error)
+                // res.send(error)
+            })
+        })
+
+        // fetch(url, options)
+        // .then( (res:any) => res.json())
+        // .then( (data:any) => {
+        //    console.log("return", data)
+        // //    res.send(data)
+        //     let userId = data.id
+        //     makePlaylist(authCode, userId)
+        //     .then((data:any) => console.log("return2", data))
+        // })
+        // .catch((error:Error) => {
+        //     console.log("error", error)
+        //     // res.send(error)
+        // })
+
+
+    })
+})
+
+function makePlaylist (authCode: string, userId: string, playlist: UniversalPlaylist):any {
+    return new Promise (function (resolve, reject) {
+        const url = `https://api.spotify.com/v1/users/${userId}/playlists`
+
+        let data = {
+            name: playlist.name,
+            description: playlist.description,
+            public: false,
+        }
+
+        console.log("auth:", authCode),
+        console.log("usedi:", userId)
+        const options = {
+            method: 'POST',
+            headers: {
+                Authorization: authCode,
+                "Content-Type": 'application/json',
+            },
+            //body: "{\"name\":\"A New Playlist\", \"public\":false}"
+            // `grant_type=client_credentials&client_secret=${clientSecret}&client_id=${clientId}`
+            body: JSON.stringify(data)
+        };
+
+        let trackUris = universalTracksToSpotifyURIs(playlist.tracks)
+
+        fetch(url, options)
+        .then( (res:any) => res.json())
+        .then( (data:any) => {
+            console.log("return", data)
+            let playlistId = data.id
+            addToPlaylist(authCode, playlistId, trackUris)
+            // .then()
+        //    res.send(data)
+        //    let userId = data.id
+
+        })
+        .catch((error:Error) => {
+            console.log("error", error)
+            // res.send(error)
+        })
+    })
+}
+
+function universalTracksToSpotifyURIs (tracks: Array<UniversalTrack>):Array<string> {
+    var uris = Array<string>()
+    for (let track of tracks){
+        let uri = "spotify:track:".concat(track.spotifyId)
+        uris.push(uri)
+    }
+    return uris 
+}
+
+function addToPlaylist (authCode: string, playlistId: string, uris: Array<string>): any {
+    console.log("playlist ID: ", playlistId)
+    const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`
+
+    let data = {
+        uris: uris
+    }
+
+    const options = {
+        method: 'POST',
+        headers: {
+            Authorization: authCode,
+            "Content-Type": 'application/json',
+        },
+        body: JSON.stringify(data)
+    };
+
+    fetch(url, options)
+    .then( (res:any) => res.json())
+    .then( (data:any) => {
+        console.log("return", data)
+    })
+    .catch((error:Error) => {
+        console.log("error", error)
+    })
+
+}
 
 // function parseUrl (url: string): any {
 //     //TODO: rework with REGEX, currently not handling edge cases

@@ -186,14 +186,6 @@ export module Firestore {
         genres?: [string];
     }
 
-    // export interface AlbumTrack {
-    //     album: string;
-    //     coverImage: string;
-    //     id: string;
-    //     artist: string;
-    //     name: string;
-    // }
-
     export interface FirestoreAlbumData {
         artist: string;
         name: string;
@@ -203,4 +195,12 @@ export module Firestore {
         tracks: FirestoreTrackData[];
         genres: string[];
     }
+
+    export interface FirestorePlaylistData {
+        name: string;
+        description: string;
+        coverImage: string;
+        tracks: FirestoreTrackData[];
+    }
 }
+
