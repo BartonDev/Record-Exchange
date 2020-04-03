@@ -34,6 +34,22 @@ export function getSpotifyToken (): any {
     })
 }
 
+export function getSpotifyAuthCodeUrl (): string {
+    const clientId = 'a46438b4ef724143bd34928fee96a742';
+    const redirectUri = 'http://localhost:3000/spotifyCallback'; 
+    const state = "abcdefg";
+    const scope = 'user-read-private playlist-modify-private';
+
+    var url = 'https://accounts.spotify.com/authorize';
+    url += '?response_type=token';
+    url += '&client_id=' + encodeURIComponent(clientId);
+    url += '&scope=' + encodeURIComponent(scope);
+    url += '&redirect_uri=' + encodeURIComponent(redirectUri);
+    url += '&state=' + encodeURIComponent(state);
+
+    return (url)
+}
+
 interface TokenResponse {
     access_token: string;
     token_type: string;

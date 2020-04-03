@@ -1,10 +1,17 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
-import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
-import {SpotifyToken, getSpotifyToken} from "./SpotifyTokenManager"
+import {SpotifyToken, getSpotifyToken, getSpotifyAuthCodeUrl} from "./SpotifyTokenManager"
 import {ServiceType, ObjectType} from "./musicEnums"
+
+import {Track, AppleTrack, SpotifyTrack, UniversalTrack, FirestoreUniversalTrack} from "./musicObjects"
+import {Album, SpotifyAlbum, AppleAlbum, UniversalAlbum} from "./musicObjects"
+import {ApplePlaylist, SpotifyPlaylist, UniversalPlaylist, FirestoreUniversalPlaylist, JsonUniversalPlaylist} from "./musicObjects"
+import {MatchValue} from "./musicObjects"
+
+// const request = require('request').defaults({encoding:null});
+
 
 
 // import {ColorPalete, getPaletteFromUrl} from './ColorPalette'
@@ -24,7 +31,7 @@ const APPLETOKEN = 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldWN1IyNEdVNkgi
 
 //ENUMS
 
-enum MatchValue {match, nonMatch, exactMatch }
+// enum MatchValue {match, nonMatch, exactMatch }
 // enum ServiceType {
 //     spotify = 'spotify', 
 //     apple = 'apple'
@@ -49,503 +56,585 @@ enum MatchValue {match, nonMatch, exactMatch }
 //     }
 // }
 
-class Track {
-    name: string
-    artist: string
-    album: string 
-    coverImage: string;
+// class Track {
+//     name: string
+//     artist: string
+//     album: string 
+//     coverImage: string;
 
-    constructor(name: string, artist: string, album: string, coverImage: string){
-        this.name = name
-        this.artist = artist
-        this.album = album
-        this.coverImage = coverImage
-    }
+//     constructor(name: string, artist: string, album: string, coverImage: string){
+//         this.name = name
+//         this.artist = artist
+//         this.album = album
+//         this.coverImage = coverImage
+//     }
 
-    compare (comparisonTrack: Track): MatchValue {
-        if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase() && this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()) {
-            if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()) {
-                return MatchValue.exactMatch
-            }
-            return MatchValue.match
-        }
-        return MatchValue.nonMatch
-    }
+//     compare (comparisonTrack: Track): MatchValue {
+//         if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase() && this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()) {
+//             if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()) {
+//                 return MatchValue.exactMatch
+//             }
+//             return MatchValue.match
+//         }
+//         return MatchValue.nonMatch
+//     }
 
-    baseTrack():Track {
-        return this
-    }
-}
+//     baseTrack():Track {
+//         return this
+//     }
+// }
 
-class AppleTrack extends Track{
-    id: string;
-    genres: Array<string>;
+// class AppleTrack extends Track{
+//     id: string;
+//     genres: Array<string>;
 
-    constructor(data: Apple.TrackData){
-        let name = data.attributes.name
-        let artist = data.attributes.artistName
-        let album = data.attributes.albumName
-        let rawCoverImage = data.attributes.artwork.url
-        let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
-        super(name, artist, album, coverImage)
+//     constructor(data: Apple.TrackData){
+//         let name = data.attributes.name
+//         let artist = data.attributes.artistName
+//         let album = data.attributes.albumName
+//         let rawCoverImage = data.attributes.artwork.url
+//         let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
+//         super(name, artist, album, coverImage)
 
-        this.id = data.id
-        this.genres = data.attributes.genreNames
-    }
-}
+//         this.id = data.id
+//         this.genres = data.attributes.genreNames
+//     }
+// }
 
-class SpotifyTrack extends Track {
-    id: string;
+// class SpotifyTrack extends Track {
+//     id: string;
 
-    constructor(data: Spotify.TrackAttributes){
-        let name = data.name
-        let artist = data.artists[0].name
-        let album = data.album.name
-        let coverImage = data.album.images[0].url
-        super(name, artist, album, coverImage)
+//     constructor(data: Spotify.TrackAttributes){
+//         let name = data.name
+//         let artist = data.artists[0].name
+//         let album = data.album.name
+//         let coverImage = data.album.images[0].url
+//         super(name, artist, album, coverImage)
 
-        this.id = data.id
-    }
-}
+//         this.id = data.id
+//     }
+// }
 
-class SpotifyAlbumTrack extends Track implements SpotifyTrack {
-    id: string;
+// class SpotifyAlbumTrack extends Track implements SpotifyTrack {
+//     id: string;
 
-    constructor(data: Spotify.AlbumTrack, albumName: string, albumCover: string){
-        let name = data.name
-        let artist = data.artists[0].name
-        let album = albumName
-        let coverImage = albumCover
-        super(name, artist, album, coverImage)
+//     constructor(data: Spotify.AlbumTrack, albumName: string, albumCover: string){
+//         let name = data.name
+//         let artist = data.artists[0].name
+//         let album = albumName
+//         let coverImage = albumCover
+//         super(name, artist, album, coverImage)
 
-        this.id = data.id
-    }
-}
+//         this.id = data.id
+//     }
+// }
 
-class UniversalTrack extends Track {
-    id: string;
-    spotifyId: string;
-    appleId: string;
-    // coverImage: string;
-    genres: string[];
+// class UniversalTrack extends Track {
+//     id: string;
+//     spotifyId: string;
+//     appleId: string;
+//     // coverImage: string;
+//     genres: string[];
 
-    constructor(spotifyTrack: SpotifyTrack, appleTrack: AppleTrack){
-        let name = spotifyTrack.name
-        let artist = spotifyTrack.artist
-        let album = spotifyTrack.album
-        let coverImage = spotifyTrack.coverImage
-        super(name, artist, album, coverImage)
+//     constructor(spotifyTrack: SpotifyTrack, appleTrack: AppleTrack){
+//         let name = spotifyTrack.name
+//         let artist = spotifyTrack.artist
+//         let album = spotifyTrack.album
+//         let coverImage = spotifyTrack.coverImage
+//         super(name, artist, album, coverImage)
 
-        this.spotifyId = spotifyTrack.id
-        this.appleId = appleTrack.id
+//         this.spotifyId = spotifyTrack.id
+//         this.appleId = appleTrack.id
 
-        this.genres = appleTrack.genres
+//         this.genres = appleTrack.genres
 
-        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.track)
-    }
+//         this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.track)
+//     }
 
-    toFirestoreData(): any{
-        return ({
-            spotifyId: this.spotifyId,
-            appleId: this.appleId,
-            name: this.name,
-            artist: this.artist,
-            album: this.album,
-            coverImage: this.coverImage,
-            genres: this.genres
-        })
-    }
-}
+//     toFirestoreData(): any{
+//         return ({
+//             spotifyId: this.spotifyId,
+//             appleId: this.appleId,
+//             name: this.name,
+//             artist: this.artist,
+//             album: this.album,
+//             coverImage: this.coverImage,
+//             genres: this.genres
+//         })
+//     }
+// }
 
-class FirestoreUniversalTrack extends Track implements UniversalTrack {
-    id: string;
-    spotifyId: string;
-    appleId: string;
-    // coverImage: string;
-    genres: string[];
+// class FirestoreUniversalTrack extends Track implements UniversalTrack {
+//     id: string;
+//     spotifyId: string;
+//     appleId: string;
+//     // coverImage: string;
+//     genres: string[];
 
-    constructor(firestoreData: Firestore.FirestoreTrackData, firestoreId: string){
-        let name = firestoreData.name
-        let artist = firestoreData.artist
-        let album = firestoreData.album
-        let coverImage = firestoreData.coverImage
+//     constructor(firestoreData: Firestore.FirestoreTrackData, firestoreId: string){
+//         let name = firestoreData.name
+//         let artist = firestoreData.artist
+//         let album = firestoreData.album
+//         let coverImage = firestoreData.coverImage
 
-        super(name, artist, album, coverImage)
+//         super(name, artist, album, coverImage)
 
-        this.spotifyId = firestoreData.spotifyId
-        this.appleId = firestoreData.appleId
-        this.id = firestoreId
+//         this.spotifyId = firestoreData.spotifyId
+//         this.appleId = firestoreData.appleId
+//         this.id = firestoreId
 
-        if (firestoreData.genres != undefined){
-            this.genres = firestoreData.genres
-        } else {
-            this.genres = Array<string>()
-        }
-    }
+//         if (firestoreData.genres != undefined){
+//             this.genres = firestoreData.genres
+//         } else {
+//             this.genres = Array<string>()
+//         }
+//     }
 
-    toFirestoreData():any{
-        return ({
-            spotifyId: this.spotifyId,
-            appleId: this.appleId,
-            name: this.name,
-            artist: this.artist,
-            album: this.album,
-            coverImage: this.coverImage,
-            genres: this.genres
-        })
-    }
-}
+//     toFirestoreData():any{
+//         return ({
+//             spotifyId: this.spotifyId,
+//             appleId: this.appleId,
+//             name: this.name,
+//             artist: this.artist,
+//             album: this.album,
+//             coverImage: this.coverImage,
+//             genres: this.genres
+//         })
+//     }
+// }
 
-class Album {
-    name: string
-    artist: string
+// class JsonUniversalTrack extends Track implements UniversalTrack {
+//     id: string;
+//     spotifyId: string;
+//     appleId: string;
+//     genres: string[];
+
+//     constructor(jsonString: string ){
+//         let trackData = JSON.parse(jsonString)
+//         let name = trackData.name
+//         let artist = trackData.artist
+//         let album = trackData.album
+//         let coverImage = trackData.coverImage
+
+//         super(name, artist, album, coverImage)
+
+//         this.spotifyId = trackData.spotifyId
+//         this.appleId = trackData.appleId
+//         this.id = trackData.id
+//         this.genres = trackData.genres
+//     }
+
+//     toFirestoreData():any{
+//         return ({
+//             spotifyId: this.spotifyId,
+//             appleId: this.appleId,
+//             name: this.name,
+//             artist: this.artist,
+//             album: this.album,
+//             coverImage: this.coverImage,
+//             genres: this.genres
+//         })
+//     }
+// }
+
+
+// class Album {
+//     name: string
+//     artist: string
     
-    constructor(name: string, artist: string){
-        this.name = name
-        this.artist = artist
-    }
+//     constructor(name: string, artist: string){
+//         this.name = name
+//         this.artist = artist
+//     }
 
-    //TODO: improve album comparison, possibly involving track count or release date
-    compare (comparisonAlbum: Album): MatchValue {
-        if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase() && this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
-            return MatchValue.exactMatch
-        }
-        return MatchValue.nonMatch
-    }
+//     //TODO: improve album comparison, possibly involving track count or release date
+//     compare (comparisonAlbum: Album): MatchValue {
+//         if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase() && this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
+//             return MatchValue.exactMatch
+//         }
+//         return MatchValue.nonMatch
+//     }
 
-    baseAlbum():Album {
-        return this
-    }
-}
+//     baseAlbum():Album {
+//         return this
+//     }
+// }
 
-//TODO: Clean up artists
-class SpotifyAlbum extends Album{
-    id: string
-    coverImage: string
-    // name: string
-    // artist: string
-    genres: Array<any>
-    tracks: Array<SpotifyTrack>
+// //TODO: Clean up artists
+// class SpotifyAlbum extends Album{
+//     id: string
+//     coverImage: string
+//     // name: string
+//     // artist: string
+//     genres: Array<any>
+//     tracks: Array<SpotifyTrack>
 
-    constructor (data: Spotify.AlbumResponse){
-        let artists = new Array<string>()
-        for (let artist of data.artists){
-            artists.push(artist.name)
-        }
-        let name = data.name
-        let artist = artists[0]
-        super(name, artist)
+//     constructor (data: Spotify.AlbumResponse){
+//         let artists = new Array<string>()
+//         for (let artist of data.artists){
+//             artists.push(artist.name)
+//         }
+//         let name = data.name
+//         let artist = artists[0]
+//         super(name, artist)
 
-        // this.artist = artists[0]
-        this.id = data.id
-        this.coverImage = data.images[0].url
-        this.genres = data.genres
+//         // this.artist = artists[0]
+//         this.id = data.id
+//         this.coverImage = data.images[0].url
+//         this.genres = data.genres
 
-        let tracks = new Array<SpotifyTrack>()
-        for (let trackData of data.tracks.items) {
-            let track = new SpotifyAlbumTrack(trackData, this.name, this.coverImage)
-            tracks.push(track)
-        }
-        this.tracks = tracks
-    }
-}
+//         let tracks = new Array<SpotifyTrack>()
+//         for (let trackData of data.tracks.items) {
+//             let track = new SpotifyAlbumTrack(trackData, this.name, this.coverImage)
+//             tracks.push(track)
+//         }
+//         this.tracks = tracks
+//     }
+// }
 
-class AppleAlbum extends Album{
-    id: string
-    coverImage: string
-    // name: string
-    // artist: string
-    genres: Array<string>
-    tracks: Array<AppleTrack>
 
-    constructor (data: Apple.AlbumData){
-        let name = data.attributes.name
-        let artist = data.attributes.artistName
-        super(name, artist)
+// class AppleAlbum extends Album{
+//     id: string
+//     coverImage: string
+//     // name: string
+//     // artist: string
+//     genres: Array<string>
+//     tracks: Array<AppleTrack>
 
-        this.id = data.id
-        let rawCoverImage = data.attributes.artwork.url
-        this.coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
-        let tracks = new Array<AppleTrack>()
-        for (let trackData of data.relationships.tracks.data) {
-            let track = new AppleTrack(trackData)
-            tracks.push(track)
-        }
-        this.tracks = tracks
-        this.genres = data.attributes.genreNames
-    }
-}
+//     constructor (data: Apple.AlbumData){
+//         let name = data.attributes.name
+//         let artist = data.attributes.artistName
+//         super(name, artist)
 
-class UniversalAlbum extends Album {
-    id: string
-    spotifyId: string
-    appleId: string
-    // name: string
-    coverImage: string
-    // artist: string
-    genres: Array<string>
-    tracks: Array<UniversalTrack>
+//         this.id = data.id
+//         let rawCoverImage = data.attributes.artwork.url
+//         this.coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
+//         let tracks = new Array<AppleTrack>()
+//         for (let trackData of data.relationships.tracks.data) {
+//             let track = new AppleTrack(trackData)
+//             tracks.push(track)
+//         }
+//         this.tracks = tracks
+//         this.genres = data.attributes.genreNames
+//     }
+// }
 
-    constructor(spotifyAlbum:SpotifyAlbum, appleAlbum:AppleAlbum){
-        let name = spotifyAlbum.name
-        let artist = appleAlbum.artist
-        super(name, artist)
+// class UniversalAlbum extends Album {
+//     id: string
+//     spotifyId: string
+//     appleId: string
+//     // name: string
+//     coverImage: string
+//     // artist: string
+//     genres: Array<string>
+//     tracks: Array<UniversalTrack>
 
-        this.spotifyId = spotifyAlbum.id,
-        this.appleId = appleAlbum.id
-        this.coverImage = spotifyAlbum.coverImage
-        this.genres = appleAlbum.genres
+//     constructor(spotifyAlbum:SpotifyAlbum, appleAlbum:AppleAlbum){
+//         let name = spotifyAlbum.name
+//         let artist = appleAlbum.artist
+//         super(name, artist)
 
-        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.album)
+//         this.spotifyId = spotifyAlbum.id,
+//         this.appleId = appleAlbum.id
+//         this.coverImage = spotifyAlbum.coverImage
+//         this.genres = appleAlbum.genres
 
-        //TODO: probably a cleaner way to do this
-        let spotifyTracks = spotifyAlbum.tracks
-        let appleTracks = appleAlbum.tracks
-        let universalTracks = Array<UniversalTrack>()
-        for (let spotifyTrack of spotifyTracks){
-            for (let appleTrack of appleTracks){
-                if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
-                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                    universalTracks.push(universalTrack)
-                    break
-                }
-            }
-        }
-        this.tracks = universalTracks
-    }
+//         this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.album)
 
-    toFirestoreData(): any{
-        let firestoreTracks = Array<any>()
-        for (let track of this.tracks){
-            let trackData = {
-                id: track.id,
-                name: track.name,
-                artist: track.artist,
-                album: track.album,
-                coverImage: track.coverImage,
-                spotifyId: track.spotifyId,
-                appleId: track.appleId
-            }
-            firestoreTracks.push(trackData)
-        }
+//         //TODO: probably a cleaner way to do this
+//         let spotifyTracks = spotifyAlbum.tracks
+//         let appleTracks = appleAlbum.tracks
+//         let universalTracks = Array<UniversalTrack>()
+//         for (let spotifyTrack of spotifyTracks){
+//             for (let appleTrack of appleTracks){
+//                 if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
+//                     let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+//                     universalTracks.push(universalTrack)
+//                     break
+//                 }
+//             }
+//         }
+//         this.tracks = universalTracks
+//     }
 
-        return ({
-            spotifyId: this.spotifyId,
-            appleId: this.appleId,
-            name: this.name,
-            artist: this.artist,
-            coverImage: this.coverImage,
-            genres: this.genres,
-            tracks: firestoreTracks
+//     toFirestoreData(): any{
+//         let firestoreTracks = Array<any>()
+//         for (let track of this.tracks){
+//             let trackData = {
+//                 id: track.id,
+//                 name: track.name,
+//                 artist: track.artist,
+//                 album: track.album,
+//                 coverImage: track.coverImage,
+//                 spotifyId: track.spotifyId,
+//                 appleId: track.appleId
+//             }
+//             firestoreTracks.push(trackData)
+//         }
+
+//         return ({
+//             spotifyId: this.spotifyId,
+//             appleId: this.appleId,
+//             name: this.name,
+//             artist: this.artist,
+//             coverImage: this.coverImage,
+//             genres: this.genres,
+//             tracks: firestoreTracks
            
-        })
-    }
-}
+//         })
+//     }
+// }
 
-/*
-class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
-    id: string
-    spotifyId: string
-    appleId: string
-    // name: string
-    coverImage: string
-    // artist: string
-    genres: Array<string>
-    tracks: Array<UniversalTrack>
 
-    constructor(data: Firestore.FirestoreAlbumData, firestoreId: string){
-        let name = data.name
-        let artist = data.artist
-        super(name, artist)
+// class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
+//     id: string
+//     spotifyId: string
+//     appleId: string
+//     // name: string
+//     coverImage: string
+//     // artist: string
+//     genres: Array<string>
+//     tracks: Array<UniversalTrack>
 
-        this.spotifyId = data.spotifyId
-        this.appleId = data.appleId
-        this.coverImage = data.coverImage
-        this.genres = data.genres
+//     constructor(data: Firestore.FirestoreAlbumData, firestoreId: string){
+//         let name = data.name
+//         let artist = data.artist
+//         super(name, artist)
 
-        this.id = firestoreId
+//         this.spotifyId = data.spotifyId
+//         this.appleId = data.appleId
+//         this.coverImage = data.coverImage
+//         this.genres = data.genres
 
-        //TODO: probably a cleaner way to do this
-        let tracksData = data.tracks
-        for (let trackData of data.tracks){
+//         this.id = firestoreId
 
-        }
-        // let appleTracks = appleAlbum.tracks
-        let universalTracks = Array<UniversalTrack>()
-        // for (let spotifyTrack of spotifyTracks){
-        //     for (let appleTrack of appleTracks){
-        //         if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
-        //             let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-        //             universalTracks.push(universalTrack)
-        //             break
-        //         }
-        //     }
-        // }
-        this.tracks = universalTracks
-    }
+//         //TODO: probably a cleaner way to do this
+//         let tracksData = data.tracks
+//         for (let trackData of data.tracks){
 
-    toFirestoreData(): any{
-        let firestoreTracks = Array<any>()
-        for (let track of this.tracks){
-            let trackData = {
-                id: track.id,
-                name: track.name,
-                artist: track.artist,
-                album: track.album,
-                coverImage: track.coverImage,
-            }
-            firestoreTracks.push(trackData)
-        }
+//         }
+//         // let appleTracks = appleAlbum.tracks
+//         let universalTracks = Array<UniversalTrack>()
+//         // for (let spotifyTrack of spotifyTracks){
+//         //     for (let appleTrack of appleTracks){
+//         //         if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
+//         //             let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+//         //             universalTracks.push(universalTrack)
+//         //             break
+//         //         }
+//         //     }
+//         // }
+//         this.tracks = universalTracks
+//     }
 
-        return ({
-            spotifyId: this.spotifyId,
-            appleId: this.appleId,
-            name: this.name,
-            artist: this.artist,
-            coverImage: this.coverImage,
-            genres: this.genres,
-            tracks: firestoreTracks
+//     toFirestoreData(): any{
+//         let firestoreTracks = Array<any>()
+//         for (let track of this.tracks){
+//             let trackData = {
+//                 id: track.id,
+//                 name: track.name,
+//                 artist: track.artist,
+//                 album: track.album,
+//                 coverImage: track.coverImage,
+//             }
+//             firestoreTracks.push(trackData)
+//         }
+
+//         return ({
+//             spotifyId: this.spotifyId,
+//             appleId: this.appleId,
+//             name: this.name,
+//             artist: this.artist,
+//             coverImage: this.coverImage,
+//             genres: this.genres,
+//             tracks: firestoreTracks
            
-        })
-    }
-}*/
+//         })
+//     }
+// }
 
-class Playlist {
-    name: string
-    description: string
-    coverImage: string
+// class Playlist {
+//     name: string
+//     description: string
+//     coverImage: string
 
-    constructor (name: string, description: string, coverImage: string){
-        this.name = name
-        this.description = description
-        this.coverImage = coverImage
-    }
-}
+//     constructor (name: string, description: string, coverImage: string){
+//         this.name = name
+//         this.description = description
+//         this.coverImage = coverImage
+//     }
+// }
 
-class ApplePlaylist extends Playlist{
-    id: string;
-    tracks: Array<AppleTrack>;
+// class ApplePlaylist extends Playlist{
+//     id: string;
+//     tracks: Array<AppleTrack>;
 
-    constructor (data:Apple.PlaylistData){
-        let name = data.attributes.name
-        let description = data.attributes.description.standard
-        let rawCoverImage = data.attributes.artwork.url
-        let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
-        super(name, description, coverImage)
+//     constructor (data:Apple.PlaylistData){
+//         let name = data.attributes.name
+//         let description = data.attributes.description.standard
+//         let rawCoverImage = data.attributes.artwork.url
+//         let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
+//         super(name, description, coverImage)
 
-        this.id = data.id
-        this.tracks = new Array<AppleTrack>()
+//         this.id = data.id
+//         this.tracks = new Array<AppleTrack>()
 
-        let trackDataArray = data.relationships.tracks.data
-        for (let trackData of trackDataArray){
-            this.tracks.push(new AppleTrack(trackData))
-        }
-    }
-}
+//         let trackDataArray = data.relationships.tracks.data
+//         for (let trackData of trackDataArray){
+//             this.tracks.push(new AppleTrack(trackData))
+//         }
+//     }
+// }
 
-class SpotifyPlaylist extends Playlist{
-    id: string;
-    tracks: Array<SpotifyTrack>;
+// class SpotifyPlaylist extends Playlist{
+//     id: string;
+//     tracks: Array<SpotifyTrack>;
 
-    constructor(data: Spotify.PlaylistResponse){
-        let name = data.name
-        let description = data.description
-        let coverImage = data.images[0].url
-        super(name, description, coverImage)
+//     constructor(data: Spotify.PlaylistResponse){
+//         let name = data.name
+//         let description = data.description
+//         let coverImage = data.images[0].url
+//         super(name, description, coverImage)
 
-        this.id = data.id
-        this.tracks = new Array<SpotifyTrack>()
+//         this.id = data.id
+//         this.tracks = new Array<SpotifyTrack>()
 
-        let trackDataArray = data.tracks.items
-        for (let trackData of trackDataArray){
-            this.tracks.push(new SpotifyTrack(trackData.track))
-        }
-    }
-}
+//         let trackDataArray = data.tracks.items
+//         for (let trackData of trackDataArray){
+//             this.tracks.push(new SpotifyTrack(trackData.track))
+//         }
+//     }
+// }
 
-class UniversalPlaylist extends Playlist{
-    id: string;
-    tracks: Array<UniversalTrack>;
 
-    constructor(playlistDetails: Playlist, tracks:Array<UniversalTrack>){
-        let name = playlistDetails.name
-        let description = playlistDetails.description
-        let coverImage = playlistDetails.coverImage
-        super(name, description, coverImage)
+// class UniversalPlaylist extends Playlist{
+//     id: string;
+//     tracks: Array<UniversalTrack>;
 
-        this.id = ''
-        this.tracks = tracks
-    }
+//     constructor(playlistDetails: Playlist, tracks:Array<UniversalTrack>){
+//         let name = playlistDetails.name
+//         let description = playlistDetails.description
+//         let coverImage = playlistDetails.coverImage
+//         super(name, description, coverImage)
 
-    toFirestoreData(): any{
+//         this.id = ''
+//         this.tracks = tracks
+//     }
 
-        var firestoreTracks = Array<any>()
-        for (let track of this.tracks){
-            let trackData = {
-                id: track.id,
-                name: track.name,
-                artist: track.artist,
-                album: track.album,
-                coverImage: track.coverImage,
-                spotifyId: track.spotifyId,
-                appleId: track.appleId,
-            }
-            firestoreTracks.push(trackData)
-        }
+//     toFirestoreData(): any{
 
-        return ({
+//         var firestoreTracks = Array<any>()
+//         for (let track of this.tracks){
+//             let trackData = {
+//                 id: track.id,
+//                 name: track.name,
+//                 artist: track.artist,
+//                 album: track.album,
+//                 coverImage: track.coverImage,
+//                 spotifyId: track.spotifyId,
+//                 appleId: track.appleId,
+//             }
+//             firestoreTracks.push(trackData)
+//         }
+
+//         return ({
             
-            name: this.name,
-            description: this.description,
-            coverImage: this.coverImage,
-            tracks: firestoreTracks
-        })
-    }
-}
+//             name: this.name,
+//             description: this.description,
+//             coverImage: this.coverImage,
+//             tracks: firestoreTracks
+//         })
+//     }
+// }
 
-class FirestoreUniversalPlaylist extends Playlist implements UniversalPlaylist{
-    id: string;
-    tracks: Array<UniversalTrack>;
+// class FirestoreUniversalPlaylist extends Playlist implements UniversalPlaylist{
+//     id: string;
+//     tracks: Array<UniversalTrack>;
 
-    constructor(data: Firestore.FirestorePlaylistData, playlistId: string){
-        let name = data.name
-        let description = data.description
-        let coverImage = data.coverImage
-        super(name, description, coverImage)
+//     constructor(data: Firestore.FirestorePlaylistData, playlistId: string){
+//         let name = data.name
+//         let description = data.description
+//         let coverImage = data.coverImage
+//         super(name, description, coverImage)
 
-        this.id = playlistId
-        var tracks = new Array<UniversalTrack>()
-        for (let trackData of data.tracks){
-            let trackId = IdHash.createUniversalId(trackData.spotifyId, trackData.appleId, ObjectType.track)
-            let newTrack = new FirestoreUniversalTrack(trackData, trackId)
-            tracks.push(newTrack)
-        }
-        this.tracks = tracks
-    }
+//         this.id = playlistId
+//         var tracks = new Array<UniversalTrack>()
+//         for (let trackData of data.tracks){
+//             let trackId = IdHash.createUniversalId(trackData.spotifyId, trackData.appleId, ObjectType.track)
+//             let newTrack = new FirestoreUniversalTrack(trackData, trackId)
+//             tracks.push(newTrack)
+//         }
+//         this.tracks = tracks
+//     }
 
-    toFirestoreData(): any{
-        var firestoreTracks = Array<any>()
-        for (let track of this.tracks){
-            let trackData = {
-                id: track.id,
-                name: track.name,
-                artist: track.artist,
-                album: track.album,
-                coverImage: track.coverImage,
-                spotifyId: track.spotifyId,
-                appleId: track.appleId,
-            }
-            firestoreTracks.push(trackData)
-        }
+//     toFirestoreData(): any{
+//         var firestoreTracks = Array<any>()
+//         for (let track of this.tracks){
+//             let trackData = {
+//                 id: track.id,
+//                 name: track.name,
+//                 artist: track.artist,
+//                 album: track.album,
+//                 coverImage: track.coverImage,
+//                 spotifyId: track.spotifyId,
+//                 appleId: track.appleId,
+//             }
+//             firestoreTracks.push(trackData)
+//         }
 
-        return ({  
-            name: this.name,
-            description: this.description,
-            coverImage: this.coverImage,
-            tracks: firestoreTracks
-        })
-    }
-}
+//         return ({  
+//             name: this.name,
+//             description: this.description,
+//             coverImage: this.coverImage,
+//             tracks: firestoreTracks
+//         })
+//     }
+// }
+
+// class JsonUniversalPlaylist extends Playlist implements UniversalPlaylist{
+//     id: string;
+//     tracks: Array<UniversalTrack>;
+
+//     constructor(jsonString: string){
+//         let data = JSON.parse(jsonString)
+//         let name = data.name
+//         let description = data.description
+//         let coverImage = data.coverImage
+//         super(name, description, coverImage)
+
+//         this.id = data.id
+//         var tracks = new Array<UniversalTrack>()
+//         for (let trackData of data.tracks){
+//             let trackJson = JSON.stringify(trackData)
+//             let newTrack = new JsonUniversalTrack(trackJson)
+//             tracks.push(newTrack)
+//         }
+//         this.tracks = tracks
+//     }
+
+//     toFirestoreData(): any{
+//         var firestoreTracks = Array<any>()
+//         for (let track of this.tracks){
+//             let trackData = {
+//                 id: track.id,
+//                 name: track.name,
+//                 artist: track.artist,
+//                 album: track.album,
+//                 coverImage: track.coverImage,
+//                 spotifyId: track.spotifyId,
+//                 appleId: track.appleId,
+//             }
+//             firestoreTracks.push(trackData)
+//         }
+
+//         return ({  
+//             name: this.name,
+//             description: this.description,
+//             coverImage: this.coverImage,
+//             tracks: firestoreTracks
+//         })
+//     }
+// }
 
 // export const processUrl = functions.https.onRequest((req, res)=> {
 //     return cors(req, res, () => {
@@ -793,24 +882,18 @@ export const fetchAlbum = functions.https.onRequest((req,res) =>{
     })
 })
 
-export const test1 = functions.https.onRequest((req, res) =>{
+export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
-        const clientId = 'a46438b4ef724143bd34928fee96a742'; // Your client id
-        const redirectUri = 'http://localhost:3000/spotifyCallback'; // Your redirect uri
-        // const stateKey = 'spotify_auth_state';
-        const state = "abcdefg";
-        const scope = 'user-read-private playlist-modify-private';
-    
-        // localStorage.setItem(stateKey, state);
+        let url = getSpotifyAuthCodeUrl()
+        res.status(200).send(url)
+    })
+})
 
-        var url = 'https://accounts.spotify.com/authorize';
-        url += '?response_type=token';
-        url += '&client_id=' + encodeURIComponent(clientId);
-        url += '&scope=' + encodeURIComponent(scope);
-        url += '&redirect_uri=' + encodeURIComponent(redirectUri);
-        url += '&state=' + encodeURIComponent(state);
-    
-        res.send(url)
+export const addPlaylistToLibrarySpotify = functions.https.onRequest((req, res) =>{
+    return cors(req, res, () => {
+        console.log("7583", req.body.playlistData)
+        let playlist = new JsonUniversalPlaylist(req.body.playlistData)
+        console.log("1234", playlist)
     })
 })
 
@@ -874,7 +957,7 @@ function makePlaylist (authCode: string, userId: string, playlist: UniversalPlay
     return new Promise (function (resolve, reject) {
         const url = `https://api.spotify.com/v1/users/${userId}/playlists`
 
-        let data = {
+        let playlistData = {
             name: playlist.name,
             description: playlist.description,
             public: false,
@@ -888,32 +971,38 @@ function makePlaylist (authCode: string, userId: string, playlist: UniversalPlay
                 Authorization: authCode,
                 "Content-Type": 'application/json',
             },
-            //body: "{\"name\":\"A New Playlist\", \"public\":false}"
-            // `grant_type=client_credentials&client_secret=${clientSecret}&client_id=${clientId}`
-            body: JSON.stringify(data)
+            body: JSON.stringify(playlistData)
         };
 
-        let trackUris = universalTracksToSpotifyURIs(playlist.tracks)
+        let trackUris = tracksToUrisSpotify(playlist.tracks)
 
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
             console.log("return", data)
             let playlistId = data.id
-            addToPlaylist(authCode, playlistId, trackUris)
-            // .then()
-        //    res.send(data)
-        //    let userId = data.id
+            let trackPromise = addTracksToPlaylistSpotify(authCode, playlistId, trackUris)
+            let coverImagePromise = setCoverImageSpotify(authCode, playlistId, playlist.coverImage)
 
+            console.log(trackPromise, coverImagePromise)
         })
         .catch((error:Error) => {
             console.log("error", error)
-            // res.send(error)
         })
+
+        // setCoverImageSpotify(authCode, playlist.id, 'https://i.scdn.co/image/ab67616d0000b2736f053f270098b9a5cf9f14de')
     })
 }
 
-function universalTracksToSpotifyURIs (tracks: Array<UniversalTrack>):Array<string> {
+// function addPlaylistToSpotifyLibrary () {
+
+// }
+
+// function createPlaylistSpotify () {
+
+// }
+
+function tracksToUrisSpotify (tracks: Array<UniversalTrack>):Array<string> {
     var uris = Array<string>()
     for (let track of tracks){
         let uri = "spotify:track:".concat(track.spotifyId)
@@ -922,7 +1011,7 @@ function universalTracksToSpotifyURIs (tracks: Array<UniversalTrack>):Array<stri
     return uris 
 }
 
-function addToPlaylist (authCode: string, playlistId: string, uris: Array<string>): any {
+function addTracksToPlaylistSpotify (authCode: string, playlistId: string, uris: Array<string>): any {
     console.log("playlist ID: ", playlistId)
     const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`
 
@@ -948,6 +1037,30 @@ function addToPlaylist (authCode: string, playlistId: string, uris: Array<string
         console.log("error", error)
     })
 
+}
+
+//TODO: Actually Implement
+function setCoverImageSpotify (authCode: string, playlistId: string, imageUrl: string) {
+    return new Promise (function (resolve, reject) {
+        resolve ()
+        // const url = `https://api.spotify.com/v1/playlists/${playlistId}/images`
+        // const options = {
+        //     method: 'POST',
+        //     headers: {
+        //         Authorization: authCode,
+        //         "Content-Type": 'image/jpeg',
+        //     },
+        //     body: "IMAGE DATA HERE"
+        // };
+        
+        // fetch(url, options)
+        // .then((res:any)=>{
+        //     console.log(res)
+        // })
+        // .catch((error:Error)=>{
+        //     console.log(error)
+        // })
+    })
 }
 
 // function parseUrl (url: string): any {
