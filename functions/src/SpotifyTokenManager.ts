@@ -1,3 +1,5 @@
+import {SPOTIFY_CLIENT_SECRET, SPOTIFY_CLIENT_ID} from "./credentials"
+
 const fetch = require('cross-fetch')
 
 export class SpotifyToken {
@@ -10,8 +12,8 @@ export class SpotifyToken {
 
 export function getSpotifyToken (): any {
     return new Promise (function (resolve, reject) {
-        const clientSecret = '36e635baad4c4430a5b04b4d45bd32ea'
-        const clientId = 'a46438b4ef724143bd34928fee96a742'
+        const clientSecret = SPOTIFY_CLIENT_SECRET
+        const clientId = SPOTIFY_CLIENT_ID
 
         const url = 'https://accounts.spotify.com/api/token'
         const options = {
@@ -35,7 +37,7 @@ export function getSpotifyToken (): any {
 }
 
 export function getSpotifyAuthCodeUrl (): string {
-    const clientId = 'a46438b4ef724143bd34928fee96a742';
+    const clientId = SPOTIFY_CLIENT_ID;
     const redirectUri = 'http://localhost:3000/spotifyCallback'; 
     const state = "abcdefg";
     const scope = 'user-read-private playlist-modify-private';

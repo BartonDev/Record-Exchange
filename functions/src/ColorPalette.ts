@@ -1,7 +1,6 @@
 import Vibrant = require('node-vibrant')
 const request = require('request').defaults({encoding:null});
 
-
 export class ColorPalete {
     vibrant: string
     lightVibrant: string
