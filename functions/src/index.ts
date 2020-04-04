@@ -22,6 +22,8 @@ const cors = require('cors')({origin:true});
 
 //TODO: Unique Errors for different cases  -  (Music Not Found Error)
 
+//Misc Functions
+
 export const getPreview = functions.https.onRequest((req, res)=> {
     return cors(req, res, () => {
         let serviceType = req.body.serviceType
@@ -192,6 +194,8 @@ export const convertObject = functions.https.onRequest((req, res) => {
     })  
 })
 
+//Firestore Functions
+
 export const fetchPlaylist = functions.https.onRequest((req, res) => {
     return cors(req, res, () => {
         fetchPlaylistFirestore(req.body.id)
@@ -227,6 +231,8 @@ export const fetchAlbum = functions.https.onRequest((req,res) =>{
         })
     })
 })
+
+//Library Functions
 
 export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
