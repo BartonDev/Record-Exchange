@@ -155,7 +155,6 @@ export function searchAppleAlbum (searchAlbum:Album):any{
         let queryArtist = encodeURI(searchAlbum.artist.replace(/[&]/g, ''))
     
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${ queryName.concat("%20", queryArtist)}&limit=5&types=albums`;
-        console.log('URL', url)
         const options = {
             headers: {
                 Authorization: `Bearer ${APPLE_TOKEN}`

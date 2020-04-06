@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions';
 
-import {SpotifyToken, getSpotifyToken, getSpotifyAuthCodeUrl} from "./spotifyTokenManager"
+import {SpotifyToken, getSpotifyToken, getSpotifyAuthCodeUrl} from "./SpotifyTokenManager"
 import {ServiceType, ObjectType} from "./musicEnums"
 
 import {AppleTrack, SpotifyTrack, UniversalTrack} from "./musicObjects"
@@ -16,8 +16,10 @@ import {spotifyTrackToUniversal, spotifyAlbumToUniversal, spotifyPlaylistToUnive
 import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} from "./convertMusic"
 
 import {addPlaylistToLibrarySpotify} from "./libraryManager"
+// import { user } from 'firebase-functions/lib/providers/auth';
+import { APPLE_TOKEN } from './credentials';
 
-// const fetch = require('cross-fetch')
+const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
 
 //TODO: Unique Errors for different cases  -  (Music Not Found Error)
@@ -234,6 +236,7 @@ export const fetchAlbum = functions.https.onRequest((req,res) =>{
 
 //Library Functions
 
+//Spotify
 export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         let url = getSpotifyAuthCodeUrl()
@@ -253,5 +256,53 @@ export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
             res.status(400).send()
         })
         
+    })
+})
+
+//Apple 
+
+export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
+    return cors(req, res, () => {
+        const url = 'https://api.music.apple.com/v1/me/library/playlists'
+        let userToken = req.body.userToken
+        console.log(userToken)
+        console.log(APPLE_TOKEN)
+        let data = {
+            "attributes":{
+               "name":"Some Playlist",
+               "description":"My description"
+            },
+            // "relationships":{
+            //    "tracks":{
+            //       "data":[
+            //          {
+            //             "id":"900032829",
+            //             "type":"songs"
+            //          }
+            //       ]
+            //    }
+            // }
+        }
+
+        const options = {
+            method: 'POST',
+            headers: {
+                'Music-User-Token': userToken,
+                Authorization: APPLE_TOKEN,
+                "Content-Type": 'application/json',
+            },
+            body: JSON.stringify(data)
+        };
+    
+        fetch(url, options)
+        .then( (res:any) => console.log(res))
+        // .then( (data:any) => {
+        //     console.log("return", data)
+        // })
+        .catch((error:Error) => {
+            console.log("error", error)
+        })
+
+
     })
 })

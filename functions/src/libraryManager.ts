@@ -1,5 +1,7 @@
 import {UniversalTrack, UniversalPlaylist} from "./musicObjects"
 
+//SPOTIFY
+
 export function addPlaylistToLibrarySpotify (authCode:string, playlist: UniversalPlaylist):any{
     return new Promise (function (resolve, reject) {
         getUserIdSpotify(authCode)
@@ -139,3 +141,6 @@ function setCoverImageSpotify (authCode: string, playlistId: string, imageUrl: s
         // })
     })
 }
+
+//APPLE
+
