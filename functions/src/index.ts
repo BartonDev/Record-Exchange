@@ -265,23 +265,30 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         const url = 'https://api.music.apple.com/v1/me/library/playlists'
         let userToken = req.body.userToken
+        // console.log()
         console.log(userToken)
         console.log(APPLE_TOKEN)
+        let playlistData = req.body.playlistData
         let data = {
             "attributes":{
-               "name":"Some Playlist",
-               "description":"My description"
+               "name":playlistData.name,
+               "description":playlistData.description
             },
-            // "relationships":{
-            //    "tracks":{
-            //       "data":[
-            //          {
-            //             "id":"900032829",
-            //             "type":"songs"
-            //          }
-            //       ]
-            //    }
-            // }
+            "relationships":{
+               "tracks":{
+                  "data":[
+                     {
+                        "id":"1442994282",
+                        "type":"songs"
+                     },
+                     //435761212
+                     {
+                        "id":"435761212",
+                        "type":"songs"
+                     }
+                  ]
+               }
+            }
         }
 
         const options = {
