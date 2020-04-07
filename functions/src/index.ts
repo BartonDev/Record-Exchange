@@ -118,6 +118,7 @@ export const convertObject = functions.https.onRequest((req, res) => {
                             res.status(200).send(universalPlaylist)
                         })
                         .catch((error:Error) =>{
+                            console.log(error)
                             res.status(400).send(error)
                         })
                     })
@@ -295,7 +296,7 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
             method: 'POST',
             headers: {
                 'Music-User-Token': userToken,
-                Authorization: APPLE_TOKEN,
+                Authorization: `Bearer ${APPLE_TOKEN}`,
                 "Content-Type": 'application/json',
             },
             body: JSON.stringify(data)
@@ -310,6 +311,55 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
             console.log("error", error)
         })
 
-
     })
+})
+
+export const test1 = functions.https.onRequest((req, res) =>{
+    getSpotifyToken()
+    .then((token:SpotifyToken)=>{
+        //spotify:playlist:7GH5yEesYh8yyGNjBjpGql
+        const url = `https://api.spotify.com/v1/users//playlists/7GH5yEesYh8yyGNjBjpGql`;
+        const options = {
+            headers: {
+                Authorization: token.token
+            }
+        };
+
+        fetch(url, options)
+        .then( (res:any) => res.json())
+        .then( (data:any) => {
+            res.send(data)
+            // let parsedResponse= <Spotify.PlaylistResponse> data
+            // let playlist = new SpotifyPlaylist(parsedResponse)
+            // resolve(playlist)
+        })
+        .catch((error:Error) => {
+            res.send(error)
+        })
+    })
+    
+})
+
+export const test2 = functions.https.onRequest((req, res) =>{
+    const url = `https://api.music.apple.com/v1/catalog/us/playlists/pl.u-8aAVXolfNbjxo0`
+    const options = {
+        headers: {
+            Authorization: `Bearer ${APPLE_TOKEN}`
+        }
+    };
+
+    fetch(url, options)
+    .then( (res:any) => res.json())
+    .then( (data:any) => {
+        // console.log(data)
+        res.send(data)
+        // let parsedResponse= <Apple.PlaylistResponse> data
+        // let playlist = new ApplePlaylist(parsedResponse.data[0])
+        // resolve(playlist)
+    })
+    .catch((error:Error) => {
+        res.send(error)
+        // reject(err or)
+    })
+    
 })

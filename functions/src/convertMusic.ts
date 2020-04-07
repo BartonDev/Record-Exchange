@@ -14,6 +14,8 @@ import {getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} fr
 
 import {APPLE_TOKEN} from "./credentials"
 
+const fetch = require('cross-fetch')
+
 //UNIVERSALS
 
 export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): any {

@@ -20,6 +20,7 @@ export module Apple {
         genreNames: string[];
         name: string;
         albumName: string;
+        durationInMillis: string;
     }
 
     export interface AlbumAttributes {
@@ -117,6 +118,8 @@ export module Spotify {
         artists: Artist[];
         id: string;
         name: string;
+        duration_ms: string;
+        preview_url: string;
     }
     
     export interface TrackItem {
@@ -144,6 +147,8 @@ export module Spotify {
         artists: Artist[];
         id: string;
         name: string;
+        duration_ms: string;
+        preview_url: string;
     }
 
     export interface AlbumTracks {
@@ -184,6 +189,8 @@ export module Firestore {
         album: string;
         coverImage: string;
         genres?: [string];
+        duration: string;
+        preview: string;
     }
 
     export interface FirestoreAlbumData {

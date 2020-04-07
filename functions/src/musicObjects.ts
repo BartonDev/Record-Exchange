@@ -9,12 +9,14 @@ export class Track {
     artist: string
     album: string 
     coverImage: string;
+    duration: string;
 
-    constructor(name: string, artist: string, album: string, coverImage: string){
+    constructor(name: string, artist: string, album: string, coverImage: string, duration: string){
         this.name = name
         this.artist = artist
         this.album = album
         this.coverImage = coverImage
+        this.duration = duration
     }
 
     compare (comparisonTrack: Track): MatchValue {
@@ -42,7 +44,8 @@ export class AppleTrack extends Track{
         let album = data.attributes.albumName
         let rawCoverImage = data.attributes.artwork.url
         let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
-        super(name, artist, album, coverImage)
+        let duration = msToStandard(data.attributes.durationInMillis)
+        super(name, artist, album, coverImage, duration)
 
         this.id = data.id
         this.genres = data.attributes.genreNames
@@ -51,29 +54,35 @@ export class AppleTrack extends Track{
 
 export class SpotifyTrack extends Track {
     id: string;
+    preview: string;
 
     constructor(data: Spotify.TrackAttributes){
         let name = data.name
         let artist = data.artists[0].name
         let album = data.album.name
         let coverImage = data.album.images[0].url
-        super(name, artist, album, coverImage)
+        let duration =  msToStandard(data.duration_ms)
+        super(name, artist, album, coverImage, duration)
 
         this.id = data.id
+        this.preview = data.preview_url
     }
 }
 
 export class SpotifyAlbumTrack extends Track implements SpotifyTrack {
     id: string;
+    preview: string;
 
     constructor(data: Spotify.AlbumTrack, albumName: string, albumCover: string){
         let name = data.name
         let artist = data.artists[0].name
         let album = albumName
         let coverImage = albumCover
-        super(name, artist, album, coverImage)
+        let duration =  msToStandard(data.duration_ms)
+        super(name, artist, album, coverImage, duration)
 
         this.id = data.id
+        this.preview = data.preview_url
     }
 }
 
@@ -83,17 +92,19 @@ export class UniversalTrack extends Track {
     appleId: string;
     // coverImage: string;
     genres: string[];
+    preview: string;
 
     constructor(spotifyTrack: SpotifyTrack, appleTrack: AppleTrack){
         let name = spotifyTrack.name
         let artist = spotifyTrack.artist
         let album = spotifyTrack.album
         let coverImage = spotifyTrack.coverImage
-        super(name, artist, album, coverImage)
+        let duration = spotifyTrack.duration
+        super(name, artist, album, coverImage, duration)
 
+        this.preview = spotifyTrack.preview
         this.spotifyId = spotifyTrack.id
         this.appleId = appleTrack.id
-
         this.genres = appleTrack.genres
 
         this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.track)
@@ -107,7 +118,9 @@ export class UniversalTrack extends Track {
             artist: this.artist,
             album: this.album,
             coverImage: this.coverImage,
-            genres: this.genres
+            genres: this.genres,
+            duration: this.duration,
+            preview: this.preview
         })
     }
 }
@@ -118,18 +131,21 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
     appleId: string;
     // coverImage: string;
     genres: string[];
+    preview: string;
 
     constructor(firestoreData: Firestore.FirestoreTrackData, firestoreId: string){
         let name = firestoreData.name
         let artist = firestoreData.artist
         let album = firestoreData.album
         let coverImage = firestoreData.coverImage
+        let duration = firestoreData.duration
 
-        super(name, artist, album, coverImage)
+        super(name, artist, album, coverImage, duration)
 
         this.spotifyId = firestoreData.spotifyId
         this.appleId = firestoreData.appleId
         this.id = firestoreId
+        this.preview = firestoreData.preview
 
         if (firestoreData.genres != undefined){
             this.genres = firestoreData.genres
@@ -146,7 +162,9 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
             artist: this.artist,
             album: this.album,
             coverImage: this.coverImage,
-            genres: this.genres
+            genres: this.genres,
+            duration: this.duration,
+            preview: this.preview
         })
     }
 }
@@ -156,6 +174,7 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
     spotifyId: string;
     appleId: string;
     genres: string[];
+    preview: string;
 
     constructor(jsonString: string ){
         let trackData = JSON.parse(jsonString)
@@ -163,13 +182,15 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
         let artist = trackData.artist
         let album = trackData.album
         let coverImage = trackData.coverImage
+        let duration = trackData.duration
 
-        super(name, artist, album, coverImage)
+        super(name, artist, album, coverImage, duration)
 
         this.spotifyId = trackData.spotifyId
         this.appleId = trackData.appleId
         this.id = trackData.id
         this.genres = trackData.genres
+        this.preview = trackData.preview
     }
 
     toFirestoreData():any{
@@ -180,7 +201,9 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
             artist: this.artist,
             album: this.album,
             coverImage: this.coverImage,
-            genres: this.genres
+            genres: this.genres,
+            duration: this.duration,
+            preview: this.preview
         })
     }
 }
@@ -197,8 +220,28 @@ export class Album {
 
     //TODO: improve album comparison, possibly involving track count or release date
     compare (comparisonAlbum: Album): MatchValue {
-        if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase() && this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
-            return MatchValue.exactMatch
+        if (this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
+            if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase()){
+                return MatchValue.exactMatch
+            }
+            else {
+                let thisArray = this.name.toLowerCase().split(/[^A-Za-z0-9]/);
+                let comparisonArray = comparisonAlbum.name.toLowerCase().split(/[^A-Za-z0-9]/);
+                if (thisArray.length >= comparisonArray.length){
+                    let totalWords = thisArray.length
+                    var matchedWords = 0
+                    for (let word in thisArray){
+                        if (comparisonArray.includes(word)){
+                            matchedWords += 1
+                        }
+                    }
+                    let matchPercentage = matchedWords/totalWords
+                }
+                else {
+
+                }
+                return MatchValue.match
+            }
         }
         return MatchValue.nonMatch
     }
@@ -581,4 +624,12 @@ export class JsonUniversalPlaylist extends Playlist implements UniversalPlaylist
             tracks: firestoreTracks
         })
     }
+}
+
+function msToStandard(ms:string):string {
+    let totalSeconds = parseInt(ms)/1000
+    let minutes = Math.floor(totalSeconds/60)
+    let seconds = Math.floor(totalSeconds%60)
+    let standardTime = `${minutes}:${seconds}`
+    return standardTime
 }

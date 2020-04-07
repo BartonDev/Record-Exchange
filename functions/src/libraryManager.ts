@@ -1,5 +1,7 @@
 import {UniversalTrack, UniversalPlaylist} from "./musicObjects"
 
+const fetch = require('cross-fetch')
+
 //SPOTIFY
 
 export function addPlaylistToLibrarySpotify (authCode:string, playlist: UniversalPlaylist):any{

@@ -8,6 +8,7 @@ import {MatchValue} from "./musicObjects"
 
 import {APPLE_TOKEN} from "./credentials"
 
+const fetch = require('cross-fetch')
 
 //SEARCHS
 
@@ -62,7 +63,7 @@ export function searchAppleTrack(searchTrack:Track): any {
         let queryArtist = encodeURI(searchTrack.artist.replace(/[&]/g, ''))
     
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${ queryName.concat("%20", queryArtist)}&limit=5&types=songs`;
-        console.log('URL', url)
+        // console.log('URL', url)
         const options = {
             headers: {
                 Authorization: `Bearer ${APPLE_TOKEN}`
@@ -76,8 +77,8 @@ export function searchAppleTrack(searchTrack:Track): any {
 
             for (let trackData of parsedResponse.results.songs.data){
                 let comparisonTrack = new AppleTrack(trackData)
-                console.log(searchTrack.name, comparisonTrack.name)
-                console.log(searchTrack.artist, comparisonTrack.artist)
+                // console.log(searchTrack.name, comparisonTrack.name)
+                // console.log(searchTrack.artist, comparisonTrack.artist)
                 let matchValue = searchTrack.compare(comparisonTrack)
     
                 if (matchValue == MatchValue.exactMatch){
@@ -171,19 +172,26 @@ export function searchAppleAlbum (searchAlbum:Album):any{
                 let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
                 let matchValue = searchAlbum.compare(comparisonAlbum)
 
+                console.log("searching", comparisonAlbum.name, searchAlbum.name)
+
                 if (matchValue == MatchValue.exactMatch){
                     appleAlbumId = albumData.id
                     break
                 }
             }
-
-            getAppleAlbum(appleAlbumId)
-            .then((appleAlbum:AppleAlbum) =>{
-                resolve(appleAlbum)
-            })
-            .catch((error:Error) =>{
-                reject(error)
-            })
+            if (appleAlbumId) {
+                getAppleAlbum(appleAlbumId)
+                .then((appleAlbum:AppleAlbum) =>{
+                    resolve(appleAlbum)
+                })
+                .catch((error:Error) =>{
+                    reject(error)
+                })
+            }
+            else {
+                reject ("album not found")
+            }
+            
 
         })
         .catch((error:Error) => {
@@ -273,9 +281,9 @@ export function getAppleAlbum (albumId: string): any {
         .then( (res:any) => res.json())
         .then( (data:any) => {
             let parsedData = <Apple.AlbumResponse> data
-            console.log('parnisp', parsedData.data[0])
+            // console.log('parnisp', parsedData.data[0])
             let album = new AppleAlbum(parsedData.data[0])
-            console.log('album', album)
+            // console.log('album', album)
             resolve(album)
         })
         .catch((error:Error) => {
