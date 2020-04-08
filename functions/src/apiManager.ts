@@ -40,8 +40,11 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
                 let matchValue = matchResult.value
                 let matchPercentage = matchResult.percentage
 
+                console.log("sermch", searchTrack.name, comparisonTrack.name, matchResult, matchPercentage)
+
                 if (matchValue == MatchValue.exactMatch){
-                    // matchedTrack = comparisonTrack
+                    
+                    matchedTrack = comparisonTrack
                     break
                 } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
                     highestPercentage = matchPercentage
@@ -51,6 +54,7 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
             if (matchedTrack != undefined) {
                 resolve(matchedTrack)
             } else{
+                console.log("eee")
                 reject("TRACK NOT FOUND")
             }
         })

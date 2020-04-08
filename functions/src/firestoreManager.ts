@@ -189,10 +189,15 @@ export function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
         else if (serviceType == ServiceType.apple) {
             admin.firestore().collection("albums").where("appleId", "==", id).get()
             .then(function(querySnapshot) {
-                querySnapshot.forEach(function(doc) {
-                });
+                if (!querySnapshot.empty){
+                    let doc = querySnapshot.docs[0]
+                    resolve(doc.data())
+                } else {
+                    reject()
+                }
             })
             .catch(function(error) {
+                reject(error)
             });
         }
     })
@@ -200,6 +205,7 @@ export function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
 
 export function fetchTrackFirestore(id: string, serviceType?:ServiceType):any{
     return new Promise (function(resolve, reject) {
+        console.log("okeyeye")
         if (!admin.apps.length) {
             admin.initializeApp();
         } 
@@ -229,16 +235,23 @@ export function fetchTrackFirestore(id: string, serviceType?:ServiceType):any{
                 }
             })
             .catch(function(error) {
-                reject()
+                reject(error)
             });
         }
         else if (serviceType == ServiceType.apple) {
             admin.firestore().collection("tracks").where("appleId", "==", id).get()
             .then(function(querySnapshot) {
-                querySnapshot.forEach(function(doc) {
-                });
+                if (!querySnapshot.empty){
+                    let doc = querySnapshot.docs[0]
+                    let docData = <Firestore.FirestoreTrackData> doc.data()
+                    let universalTrack = new FirestoreUniversalTrack(docData, doc.id)
+                    resolve(universalTrack)
+                } else{
+                    reject()
+                }
             })
             .catch(function(error) {
+                reject(error)
             });
         }
     })

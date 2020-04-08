@@ -67,28 +67,72 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
 
 export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any {
     return new Promise(function(resolve, reject) {
-        const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
-        const options = {
-            headers: {
-                Authorization: `Bearer ${APPLE_TOKEN}`
-            }
-        };
+        // const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
+        // const options = {
+        //     headers: {
+        //         Authorization: `Bearer ${APPLE_TOKEN}`
+        //     }
+        // };
 
-        fetch(url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            let parsedResponse = <Apple.Tracks>data
-            let appleTrack = new AppleTrack(parsedResponse.data[0])
-            searchSpotifyTrack(appleTrack.baseTrack(), token)
-            .then((spotifyTrack:SpotifyTrack) =>{
-                let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                resolve(universalTrack)
-            }).catch((error:Error) =>{
+        // fetch(url, options)
+        // .then( (res:any) => res.json())
+        // .then( (data:any) => {
+        //     let parsedResponse = <Apple.Tracks>data
+        //     let appleTrack = new AppleTrack(parsedResponse.data[0])
+        //     searchSpotifyTrack(appleTrack.baseTrack(), token)
+        //     .then((spotifyTrack:SpotifyTrack) =>{
+        //         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+        //         resolve(universalTrack)
+        //     }).catch((error:Error) =>{
+        //         reject(error)
+        //     })
+        // }).catch((error:Error) =>{
+        //     reject(error)
+        // } )
+        console.log("a")
+        fetchTrackFirestore(trackId, ServiceType.apple)
+        .then((universalTrack: FirestoreUniversalTrack) => {
+            console.log("b")
+            resolve(universalTrack)
+        })
+        .catch(()=>{
+            console.log("c")
+            const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${APPLE_TOKEN}`
+                }
+            };
+            
+            fetch (url, options)
+            .then( (res:any) => res.json())
+            .then( (data:any) => {
+                console.log("OKEUELEEUEKE")
+                let parsedResponse = <Apple.Tracks>data
+                let appleTrack = new AppleTrack(parsedResponse.data[0])
+
+                searchSpotifyTrack(appleTrack.baseTrack(), token)
+                .then((spotifyTrack:SpotifyTrack) =>{
+                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                    storeUniversalTrack(universalTrack)
+                    .then(() =>{
+                        // universalTrack.id = docRef
+                        resolve(universalTrack)
+                    })
+                    .catch((error:Error)=>{
+                        console.log(error)
+                    })
+                }).catch((error:Error) =>{
+                    reject(error)
+                })
+            }).catch((error:Error) => {
+                console.log(error)
                 reject(error)
-            })
-        }).catch((error:Error) =>{
-            reject(error)
-        } )
+            });
+        })
+
+
+
     })
 }
 
@@ -106,6 +150,7 @@ export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):a
                     resolve(universalAlbum)
                 })
                 .catch((error:Error)=>{
+                    reject (error)
                 })
             })
         })
@@ -129,6 +174,7 @@ export function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any
                     resolve(universalAlbum)
                 })
                 .catch((error:Error)=>{
+                    reject (error)
                 })
             })
         })

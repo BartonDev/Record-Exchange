@@ -107,6 +107,8 @@ export const convertObject = functions.https.onRequest((req, res) => {
         let objectType = req.body.objectType
         let id = req.body.id 
 
+        console.log(serviceType, objectType)
+
         getSpotifyToken()
         .then((spotifyToken:SpotifyToken) =>{
             if (serviceType == ServiceType.spotify) {
@@ -177,6 +179,7 @@ export const convertObject = functions.https.onRequest((req, res) => {
                         res.status(400).send(error)
                     })
                 } else if (objectType == ObjectType.track){
+                    console.log("WHAT")
                     appleTrackToUniversal(id, spotifyToken)
                     .then((universalTrack:UniversalTrack)=>{
                         console.log('ok', universalTrack)
