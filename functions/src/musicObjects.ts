@@ -626,18 +626,25 @@ export class JsonUniversalPlaylist extends Playlist implements UniversalPlaylist
 function msToStandard(ms:string):string {
     let totalSeconds = parseInt(ms)/1000
     let minutes = Math.floor(totalSeconds/60)
-    let seconds = Math.floor(totalSeconds%60)
+    var seconds = `${Math.floor(totalSeconds%60)}`
+    if (seconds.length == 0) {
+        seconds = '00'
+    } else if (seconds.length == 1){
+        seconds = '0' + seconds
+    }
     let standardTime = `${minutes}:${seconds}`
     return standardTime
 }
 
 function compareStrings (string1: string, string2: string): number{
-    let array1 = string1.toLowerCase().split(/[^A-Za-z0-9]/);
-    let array2 = string2.toLowerCase().split(/[^A-Za-z0-9]/);
+    
+    let array1 = string1.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
+    let array2 = string2.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
+
     if (array1.length >= array2.length){
         let totalWords = array1.length
         var matchedWords = 0
-        for (let word in array1){
+        for (let word of array1){
             if (array2.includes(word)){
                 matchedWords += 1
             }
@@ -648,7 +655,7 @@ function compareStrings (string1: string, string2: string): number{
     else {
         let totalWords = array2.length
         var matchedWords = 0
-        for (let word in array2){
+        for (let word of array2){
             if (array1.includes(word)){
                 matchedWords += 1
             }

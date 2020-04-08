@@ -97,6 +97,7 @@ export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):a
 
         getSpotifyAlbum(albumId, token)
         .then((spotifyAlbum:SpotifyAlbum) =>{
+            console.log("ALBUM FOUND: ", spotifyAlbum)
             searchAppleAlbum(spotifyAlbum.baseAlbum())
             .then((appleAlbum:AppleAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)

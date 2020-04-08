@@ -49,6 +49,7 @@ export const getPreview = functions.https.onRequest((req, res)=> {
                         res.status(200).send(spotifyAlbum)
                     })
                     .catch((error:Error) =>{
+                        console.log(error)
                         res.status(400).send(error)
                     })
                 } else if (objectType == ObjectType.track){
@@ -362,4 +363,29 @@ export const test2 = functions.https.onRequest((req, res) =>{
         // reject(err or)
     })
     
+})
+
+
+
+
+
+export const test43 = functions.https.onRequest((req, res) =>{
+    getSpotifyToken()
+    .then((token:SpotifyToken) => {
+        const url = `https://api.spotify.com/v1/albums/3JbWR6CUfTLMRnlFFH2YJk`
+        const options = {
+            headers: {
+                Authorization: token.token
+            }
+        };
+        
+        fetch(url, options)
+        .then( (res:any) => res.json())
+        .then( (data:any) => {
+            res.send(data)
+        })
+        .catch((error:Error) => {
+            res.send(error)
+        })
+    })
 })

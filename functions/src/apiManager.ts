@@ -137,7 +137,7 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
                 let matchResult = searchAlbum.compare(comparisonAlbum)
                 let matchValue = matchResult.value
                 let matchPercentage = matchResult.percentage
-
+                console.log(albumPreviewData.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
                 if (matchValue == MatchValue.exactMatch){
                     spotifyAlbumId = albumPreviewData.id
                     break
@@ -198,6 +198,8 @@ export function searchAppleAlbum (searchAlbum:Album):any{
                 let matchResult = searchAlbum.compare(comparisonAlbum)
                 let matchValue = matchResult.value
                 let matchPercentage = matchResult.percentage
+                console.log(albumData)
+                console.log(albumData.attributes.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
 
                 console.log("searching", comparisonAlbum.name, searchAlbum.name)
 
