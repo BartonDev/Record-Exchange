@@ -14,7 +14,6 @@ const fetch = require('cross-fetch')
 
 export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any{
     return new Promise (function(resolve, reject) {
-        var matchedTrack:any = undefined
 
         let queryName = searchTrack.name.replace(" ", "%20")
         let queryArtist = searchTrack.artist.replace(" ", "%20")
@@ -30,21 +29,29 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
         .then( (res:any) => res.json())
         .then( (data:any) => {
             let parsedResponse = <Spotify.SearchResponse> data
+
+            var matchedTrack:any = undefined
+            var highestPercentage = 0.0
+
             for (let trackData of parsedResponse.tracks.items){
                 let comparisonTrack = new SpotifyTrack(trackData)
-                let matchValue = searchTrack.compare(comparisonTrack)
+
+                let matchResult = searchTrack.compare(comparisonTrack)
+                let matchValue = matchResult.value
+                let matchPercentage = matchResult.percentage
 
                 if (matchValue == MatchValue.exactMatch){
                     // matchedTrack = comparisonTrack
                     break
-                }else if (matchValue == MatchValue.match) {
+                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
+                    highestPercentage = matchPercentage
                     matchedTrack = comparisonTrack
                 }
             }
             if (matchedTrack != undefined) {
                 resolve(matchedTrack)
             } else{
-                reject(Error())
+                reject("TRACK NOT FOUND")
             }
         })
         .catch((error:Error) => {
@@ -55,8 +62,6 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
 
 export function searchAppleTrack(searchTrack:Track): any {
     return new Promise (function(resolve, reject) {
-
-        var matchedTrack:any = undefined
 
         //TODO: certain special characters trip up the query, needs to be refined
         let queryName = encodeURI(searchTrack.name.replace(/[&]/g, ''))
@@ -75,23 +80,29 @@ export function searchAppleTrack(searchTrack:Track): any {
         .then( (data:any) => {
             let parsedResponse = <Apple.TrackSearchResponse> data
 
+            var matchedTrack:any = undefined
+            var highestPercentage = 0.0
+
             for (let trackData of parsedResponse.results.songs.data){
                 let comparisonTrack = new AppleTrack(trackData)
-                // console.log(searchTrack.name, comparisonTrack.name)
-                // console.log(searchTrack.artist, comparisonTrack.artist)
-                let matchValue = searchTrack.compare(comparisonTrack)
+
+                let matchResult = searchTrack.compare(comparisonTrack)
+                let matchValue = matchResult.value
+                let matchPercentage = matchResult.percentage
+                
     
                 if (matchValue == MatchValue.exactMatch){
                     matchedTrack = comparisonTrack
                     break
-                }else if (matchValue == MatchValue.match) {
+                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
+                    highestPercentage = matchPercentage
                     matchedTrack = comparisonTrack
                 }
             }
             if (matchedTrack != undefined) {
                 resolve(matchedTrack)
             } else{
-                reject(Error())
+                reject("TRACK NOT FOUND")
             }
         })
         .catch((error:Error) => {
@@ -102,8 +113,6 @@ export function searchAppleTrack(searchTrack:Track): any {
 
 export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
     return new Promise (function(resolve, reject) {
-
-        var spotifyAlbumId:any = undefined
 
         let queryName = searchAlbum.name.replace(" ", "%20")
         let queryArtist = searchAlbum.artist.replace(" ", "%20")
@@ -119,25 +128,37 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
         .then( (res:any) => res.json())
         .then( (data:any) => {
             let parsedResponse = <Spotify.AlbumSearchResponse>data
+
+            var spotifyAlbumId:any = undefined
+            var highestPercentage = 0.0
+
             for (let albumPreviewData of parsedResponse.albums.items){
                 let comparisonAlbum = new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
-                let matchValue = searchAlbum.compare(comparisonAlbum)
+                let matchResult = searchAlbum.compare(comparisonAlbum)
+                let matchValue = matchResult.value
+                let matchPercentage = matchResult.percentage
 
                 if (matchValue == MatchValue.exactMatch){
                     spotifyAlbumId = albumPreviewData.id
                     break
+                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
+                    highestPercentage = matchPercentage
+                    spotifyAlbumId = albumPreviewData.id
                 }
             }
-            
-            getSpotifyAlbum(spotifyAlbumId, token)
-            .then((spotifyAlbum:SpotifyAlbum) =>{
-                resolve(spotifyAlbum)
-            })
-            .catch((error:Error) =>{
-                reject(error)
-            })
 
-            // resolve(data)
+            if (spotifyAlbumId){
+                getSpotifyAlbum(spotifyAlbumId, token)
+                .then((spotifyAlbum:SpotifyAlbum) =>{
+                    resolve(spotifyAlbum)
+                })
+                .catch((error:Error) =>{
+                    reject(error)
+                })
+            }
+            else {
+                reject("ALBUM NOT FOUND")
+            }
         })
         .catch((error:Error) => {
             reject(error)
@@ -149,7 +170,7 @@ export function searchAppleAlbum (searchAlbum:Album):any{
     //https://api.music.apple.com/v1/catalog/us/search?term=james+brown&limit=2&types=artists,albums
     return new Promise (function(resolve, reject) {
 
-        var appleAlbumId:any = undefined
+        // var appleAlbumId:any = undefined
 
         //TODO: certain special characters trip up the query, needs to be refined
         let queryName = encodeURI(searchAlbum.name.replace(/[&]/g, ''))
@@ -168,15 +189,24 @@ export function searchAppleAlbum (searchAlbum:Album):any{
             // resolve(data)
             let parsedResponse = <Apple.AlbumSearchResponse> data
 
+            var appleAlbumId:any = undefined
+            var highestPercentage = 0.0
+
             for (let albumData of parsedResponse.results.albums.data){
+
                 let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
-                let matchValue = searchAlbum.compare(comparisonAlbum)
+                let matchResult = searchAlbum.compare(comparisonAlbum)
+                let matchValue = matchResult.value
+                let matchPercentage = matchResult.percentage
 
                 console.log("searching", comparisonAlbum.name, searchAlbum.name)
 
                 if (matchValue == MatchValue.exactMatch){
                     appleAlbumId = albumData.id
                     break
+                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
+                    highestPercentage = matchPercentage
+                    appleAlbumId = albumData.id
                 }
             }
             if (appleAlbumId) {
@@ -189,7 +219,7 @@ export function searchAppleAlbum (searchAlbum:Album):any{
                 })
             }
             else {
-                reject ("album not found")
+                reject ("ALBUM NOT FOUND")
             }
             
 

@@ -4,6 +4,16 @@ import {ObjectType} from "./musicEnums"
 
 export enum MatchValue {match, nonMatch, exactMatch }
 
+export class MatchResult {
+    value: MatchValue
+    percentage: number
+
+    constructor(value: MatchValue, percentage: number){
+        this.value = value
+        this.percentage = percentage
+    }
+}
+
 export class Track {
     name: string
     artist: string
@@ -19,14 +29,15 @@ export class Track {
         this.duration = duration
     }
 
-    compare (comparisonTrack: Track): MatchValue {
+    compare (comparisonTrack: Track): MatchResult {
         if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase() && this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()) {
             if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()) {
-                return MatchValue.exactMatch
+
+                return new MatchResult(MatchValue.exactMatch, 100)
             }
-            return MatchValue.match
+            return new MatchResult(MatchValue.match, 50)
         }
-        return MatchValue.nonMatch
+        return new MatchResult(MatchValue.nonMatch, 0)
     }
 
     baseTrack():Track {
@@ -219,31 +230,17 @@ export class Album {
     }
 
     //TODO: improve album comparison, possibly involving track count or release date
-    compare (comparisonAlbum: Album): MatchValue {
+    compare (comparisonAlbum: Album): MatchResult {
         if (this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
             if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase()){
-                return MatchValue.exactMatch
+                return new MatchResult(MatchValue.exactMatch, 100)
             }
             else {
-                let thisArray = this.name.toLowerCase().split(/[^A-Za-z0-9]/);
-                let comparisonArray = comparisonAlbum.name.toLowerCase().split(/[^A-Za-z0-9]/);
-                if (thisArray.length >= comparisonArray.length){
-                    let totalWords = thisArray.length
-                    var matchedWords = 0
-                    for (let word in thisArray){
-                        if (comparisonArray.includes(word)){
-                            matchedWords += 1
-                        }
-                    }
-                    let matchPercentage = matchedWords/totalWords
-                }
-                else {
-
-                }
-                return MatchValue.match
+                let matchPercentage = compareStrings(this.name, comparisonAlbum.name)
+                return new MatchResult(MatchValue.match, matchPercentage)
             }
         }
-        return MatchValue.nonMatch
+        return new MatchResult(MatchValue.nonMatch, 0)
     }
 
     baseAlbum():Album {
@@ -632,4 +629,31 @@ function msToStandard(ms:string):string {
     let seconds = Math.floor(totalSeconds%60)
     let standardTime = `${minutes}:${seconds}`
     return standardTime
+}
+
+function compareStrings (string1: string, string2: string): number{
+    let array1 = string1.toLowerCase().split(/[^A-Za-z0-9]/);
+    let array2 = string2.toLowerCase().split(/[^A-Za-z0-9]/);
+    if (array1.length >= array2.length){
+        let totalWords = array1.length
+        var matchedWords = 0
+        for (let word in array1){
+            if (array2.includes(word)){
+                matchedWords += 1
+            }
+        }
+        let matchPercentage = matchedWords/totalWords
+        return matchPercentage
+    }
+    else {
+        let totalWords = array2.length
+        var matchedWords = 0
+        for (let word in array2){
+            if (array1.includes(word)){
+                matchedWords += 1
+            }
+        }
+        let matchPercentage = matchedWords/totalWords
+        return matchPercentage
+    }
 }
