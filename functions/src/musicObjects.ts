@@ -354,7 +354,9 @@ export class UniversalAlbum extends Album {
                 album: track.album,
                 coverImage: track.coverImage,
                 spotifyId: track.spotifyId,
-                appleId: track.appleId
+                appleId: track.appleId,
+                duration: track.duration,
+                preview: track.preview
             }
             firestoreTracks.push(trackData)
         }
@@ -423,6 +425,11 @@ export class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
                 artist: track.artist,
                 album: track.album,
                 coverImage: track.coverImage,
+                spotifyId: track.spotifyId,
+                appleId: track.appleId,
+                duration: track.duration,
+                preview: track.preview
+
             }
             firestoreTracks.push(trackData)
         }
@@ -523,6 +530,8 @@ export class UniversalPlaylist extends Playlist{
                 coverImage: track.coverImage,
                 spotifyId: track.spotifyId,
                 appleId: track.appleId,
+                duration: track.duration,
+                preview: track.preview
             }
             firestoreTracks.push(trackData)
         }
@@ -568,6 +577,8 @@ export class FirestoreUniversalPlaylist extends Playlist implements UniversalPla
                 coverImage: track.coverImage,
                 spotifyId: track.spotifyId,
                 appleId: track.appleId,
+                duration: track.duration,
+                preview: track.preview
             }
             firestoreTracks.push(trackData)
         }
@@ -613,6 +624,8 @@ export class JsonUniversalPlaylist extends Playlist implements UniversalPlaylist
                 coverImage: track.coverImage,
                 spotifyId: track.spotifyId,
                 appleId: track.appleId,
+                duration: track.duration,
+                preview: track.preview
             }
             firestoreTracks.push(trackData)
         }
