@@ -184,51 +184,85 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
             var universalTracks = new Array<UniversalTrack>()
             for (const [index, spotifyTrack] of playlist.tracks.entries()){
                 console.log(index, spotifyTrack.name)
-                fetchTrackFirestore(spotifyTrack.id, ServiceType.spotify)
-                .then((universalTrack: FirestoreUniversalTrack) => {
-                    //TODO: Fix sorting
-                    if (universalTracks.length > index){
-                        universalTracks.splice(index, 0, universalTrack)
-                    } else {
-                        universalTracks.push(universalTrack)
-                    }
-                    fullfilledPromises += 1
-                    if (fullfilledPromises == goalPromises){
-                        let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                        resolve(universalPlaylist)  
-                    }
-                })
-                .catch(() => {
+                
+                setTimeout(function(){
                     searchAppleTrack(spotifyTrack.baseTrack())
                     .then((appleTrack:AppleTrack) => {
                         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+
                         storeUniversalTrack(universalTrack)
-                        .then((docRef: string) =>{
-                            //TODO: Fix sorting
-                            universalTrack.id = docRef
-                            if (universalTracks.length > index){
-                                universalTracks.splice(index, 0, universalTrack)
-                            } else {
-                                universalTracks.push(universalTrack)
-                            }
-                            fullfilledPromises += 1
-                            if (fullfilledPromises == goalPromises){
-                                let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                                resolve(universalPlaylist)
-                            }
-                        })
                         .catch((error:Error) =>{
                             console.log(error)
                         })
+
+                        //TODO fix sorting
+                        if (universalTracks.length > index){
+                            universalTracks.splice(index, 0, universalTrack)
+                        } else {
+                            universalTracks.push(universalTrack)
+                        }
+                        fullfilledPromises += 1
+                        if (fullfilledPromises == goalPromises){
+                            let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                            resolve(universalPlaylist)
+                        }
+
                     })
                     .catch( (error:Error) => {
+                        console.log("NOT FOUND", error)
                         fullfilledPromises += 1
                         if (fullfilledPromises == goalPromises){
                             let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
                             resolve(universalPlaylist)
                         }
                     })
-                })
+                }, (100 * index));
+
+                // fetchTrackFirestore(spotifyTrack.id, ServiceType.spotify)
+                // .then((universalTrack: FirestoreUniversalTrack) => {
+                //     //TODO: Fix sorting
+                //     if (universalTracks.length > index){
+                //         universalTracks.splice(index, 0, universalTrack)
+                //     } else {
+                //         universalTracks.push(universalTrack)
+                //     }
+                //     fullfilledPromises += 1
+                //     if (fullfilledPromises == goalPromises){
+                //         let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                //         resolve(universalPlaylist)  
+                //     }
+                // })
+                // .catch(() => {
+                //     searchAppleTrack(spotifyTrack.baseTrack())
+                //     .then((appleTrack:AppleTrack) => {
+                //         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                //         storeUniversalTrack(universalTrack)
+                //         .then((docRef: string) =>{
+                //             //TODO: Fix sorting
+                //             universalTrack.id = docRef
+                //             if (universalTracks.length > index){
+                //                 universalTracks.splice(index, 0, universalTrack)
+                //             } else {
+                //                 universalTracks.push(universalTrack)
+                //             }
+                //             fullfilledPromises += 1
+                //             if (fullfilledPromises == goalPromises){
+                //                 let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                //                 resolve(universalPlaylist)
+                //             }
+                //         })
+                //         .catch((error:Error) =>{
+                //             console.log(error)
+                //         })
+                //     })
+                //     .catch( (error:Error) => {
+                //         fullfilledPromises += 1
+                //         if (fullfilledPromises == goalPromises){
+                //             let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                //             resolve(universalPlaylist)
+                //         }
+                //     })
+                // })
             }
         })
         .catch((error:Error) =>{

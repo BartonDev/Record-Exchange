@@ -117,6 +117,7 @@ export const convertObject = functions.https.onRequest((req, res) => {
                 if (objectType == ObjectType.playlist){
                     spotifyPlaylistToUniversal(id, spotifyToken)
                     .then((universalPlaylist:UniversalPlaylist) =>{
+                        console.log("sofarsogood.jpeg")
                         storeUniversalPlaylist(universalPlaylist)
                         .then( (docId:any) => {
                             universalPlaylist.id = docId

@@ -91,7 +91,8 @@ export function searchAppleTrack(searchTrack:Track): any {
                 let matchValue = matchResult.value
                 let matchPercentage = matchResult.percentage
                 
-    
+                console.log("COMP", searchTrack.name, comparisonTrack.name)
+
                 if (matchValue == MatchValue.exactMatch){
                     matchedTrack = comparisonTrack
                     break
