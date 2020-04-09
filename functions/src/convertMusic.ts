@@ -183,8 +183,7 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
             let goalPromises = playlist.tracks.length
             var universalTracks = new Array<UniversalTrack>()
             for (const [index, spotifyTrack] of playlist.tracks.entries()){
-                console.log(index, spotifyTrack.name)
-                
+                // console.log(index, spotifyTrack.name)
                 setTimeout(function(){
                     searchAppleTrack(spotifyTrack.baseTrack())
                     .then((appleTrack:AppleTrack) => {
@@ -209,7 +208,7 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
 
                     })
                     .catch( (error:Error) => {
-                        console.log("NOT FOUND", error)
+                        // console.log("NOT FOUND", error)
                         fullfilledPromises += 1
                         if (fullfilledPromises == goalPromises){
                             let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)

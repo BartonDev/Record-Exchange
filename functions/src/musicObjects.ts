@@ -2,15 +2,31 @@ import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
 import {ObjectType} from "./musicEnums"
 
-export enum MatchValue {match, nonMatch, exactMatch }
+export enum MatchValue {nonMatch, nearMatch, match, strongMatch, exactMatch }
 
 export class MatchResult {
     value: MatchValue
-    percentage: number
+    namePercentage: number
+    artistPercentage: number
+    albumPercentage: number
 
-    constructor(value: MatchValue, percentage: number){
+    constructor(value: MatchValue, namePercentage: number = 0, artistPercentage: number = 0 , albumPercentage: number = 0){
         this.value = value
-        this.percentage = percentage
+
+        if (this.value == MatchValue.exactMatch){
+            this.namePercentage = 1
+            this.artistPercentage = 1
+            this.albumPercentage = 1
+        } else if (this.value == MatchValue.nonMatch) {
+            this.namePercentage = 0
+            this.artistPercentage = 0
+            this.albumPercentage = 0
+        } else {
+            this.namePercentage = namePercentage
+            this.artistPercentage = artistPercentage
+            this.albumPercentage = albumPercentage
+        }
+        
     }
 }
 
@@ -30,14 +46,38 @@ export class Track {
     }
 
     compare (comparisonTrack: Track): MatchResult {
-        if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase() && this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()) {
-            if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()) {
-
-                return new MatchResult(MatchValue.exactMatch, 100)
-            }
-            return new MatchResult(MatchValue.match, 50)
+        var namePercentage = 0
+        var artistPercentage = 0
+        var albumPercentage = 0 
+        if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase()){
+            namePercentage = 1
+        } else {
+            namePercentage = compareStrings(this.name.toLowerCase(), comparisonTrack.name.toLowerCase())
         }
-        return new MatchResult(MatchValue.nonMatch, 0)
+
+        if (this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()){
+            artistPercentage = 1
+        } else {
+            artistPercentage = compareStrings(this.artist.toLowerCase(), comparisonTrack.artist.toLowerCase())
+        }
+
+        if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()){
+            albumPercentage = 1
+        } else {
+            albumPercentage = compareStrings(this.album.toLowerCase(), comparisonTrack.album.toLowerCase())
+        }
+
+        if (namePercentage == 1 && albumPercentage == 1 && artistPercentage == 1){
+            return new MatchResult(MatchValue.exactMatch)
+        } else if (namePercentage == 1 && artistPercentage == 1) {
+            return new MatchResult(MatchValue.strongMatch, 1, 1, albumPercentage)
+        } else if (namePercentage >= 0.5 && artistPercentage >= 0.5){
+            return new MatchResult(MatchValue.match, namePercentage, artistPercentage, albumPercentage)
+        } else if (namePercentage > 0 && artistPercentage > 0){
+            return new MatchResult(MatchValue.nearMatch, namePercentage, artistPercentage, albumPercentage)
+        } else {
+            return new MatchResult(MatchValue.nonMatch)
+        }
     }
 
     baseTrack():Track {
@@ -656,7 +696,7 @@ function compareStrings (string1: string, string2: string): number{
     
     let array1 = string1.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
     let array2 = string2.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
-    console.log(array1, array2)
+    // console.log(array1, array2)
     if (array1.length >= array2.length){
         let totalWords = array1.length
         var matchedWords = 0

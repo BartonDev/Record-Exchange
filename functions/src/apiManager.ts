@@ -15,15 +15,16 @@ const fetch = require('cross-fetch')
 export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any{
     return new Promise (function(resolve, reject) {
 
-        let queryName = searchTrack.name.replace(" ", "%20")
-        let queryArtist = searchTrack.artist.replace(" ", "%20")
+        let query = createQueryUri(searchTrack.name, searchTrack.artist)
 
-        const url = `https://api.spotify.com/v1/search?q=${queryName.concat("%20", queryArtist)}&type=track`;
+        const url = `https://api.spotify.com/v1/search?q=${query}&type=track`;
         const options = {
             headers: {
                 Authorization: token.token
             }
         };
+
+        var printerData = Array<any>()
 
         fetch(url, options)
         .then( (res:any) => res.json())
@@ -31,31 +32,56 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
             let parsedResponse = <Spotify.SearchResponse> data
 
             var matchedTrack:any = undefined
-            var highestPercentage = 0.0
+            var highestArtistPercentage = 0.0
+            var highestNamePercentage = 0.0
+            var highestAlbumPercentage = 0.0
+
+            
 
             for (let trackData of parsedResponse.tracks.items){
                 let comparisonTrack = new SpotifyTrack(trackData)
 
+                let dat = {
+                    "search": JSON.stringify(searchTrack),
+                    "comparison": JSON.stringify(comparisonTrack)
+                }
+                printerData.push(dat)
+
                 let matchResult = searchTrack.compare(comparisonTrack)
                 let matchValue = matchResult.value
-                let matchPercentage = matchResult.percentage
+                let matchNamePercentage = matchResult.namePercentage
+                let matchArtistPercentage = matchResult.artistPercentage
+                let matchAlbumPercentage = matchResult.albumPercentage
 
                 if (matchValue == MatchValue.exactMatch){
-                    
                     matchedTrack = comparisonTrack
                     break
-                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
-                    highestPercentage = matchPercentage
+                } else if (matchArtistPercentage >= highestArtistPercentage){
                     matchedTrack = comparisonTrack
+                    highestArtistPercentage = matchArtistPercentage
+                    if (matchArtistPercentage == 1 && matchNamePercentage >= highestNamePercentage){
+                        matchedTrack = comparisonTrack
+                        highestNamePercentage = matchNamePercentage
+                        if (matchNamePercentage == 1 && matchAlbumPercentage >= highestAlbumPercentage){
+                            matchedTrack = comparisonTrack
+                            highestAlbumPercentage = matchAlbumPercentage
+                        }
+                    }
                 }
+                // else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
+                //     highestPercentage = matchPercentage
+                //     matchedTrack = comparisonTrack
+                // }
             }
             if (matchedTrack != undefined) {
                 resolve(matchedTrack)
             } else{
+                // console.log("Not Found Data: ", JSON.stringify(printerData))
                 reject("TRACK NOT FOUND")
             }
         })
         .catch((error:Error) => {
+            // console.log("REJE")
             reject(error)
         })
     })
@@ -65,49 +91,77 @@ export function searchAppleTrack(searchTrack:Track): any {
     return new Promise (function(resolve, reject) {
 
         //TODO: certain special characters trip up the query, needs to be refined
-        let queryName = encodeURI(searchTrack.name.replace(/[&]/g, ''))
-        let queryArtist = encodeURI(searchTrack.artist.replace(/[&]/g, ''))
+
+        let query = createQueryUri(searchTrack.name, searchTrack.artist)
+        console.log(query)
     
-        const url = `https://api.music.apple.com/v1/catalog/us/search?term=${ queryName.concat("%20", queryArtist)}&limit=5&types=songs`;
+        const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=songs`;
         // console.log('URL', url)
         const options = {
             headers: {
                 Authorization: `Bearer ${APPLE_TOKEN}`
             }
         };
-    
         fetch(url, options)
-        .then( (res:any) => res.json())
+        .then( (res:any) => {
+            console.log("rpe", res)
+            return res.json()
+        })
         .then( (data:any) => {
+            console.log("day", data)
+
+
             let parsedResponse = <Apple.TrackSearchResponse> data
 
             var matchedTrack:any = undefined
-            var highestPercentage = 0.0
+            var highestArtistPercentage = 0.0
+            var highestNamePercentage = 0.0
+            var highestAlbumPercentage = 0.0
+
+            var printerData = Array<any>()
+
 
             for (let trackData of parsedResponse.results.songs.data){
                 let comparisonTrack = new AppleTrack(trackData)
 
+
+                let dat = {
+                    "search": JSON.stringify(searchTrack),
+                    "comparison": JSON.stringify(comparisonTrack)
+                }
+                printerData.push(dat)
+
                 let matchResult = searchTrack.compare(comparisonTrack)
                 let matchValue = matchResult.value
-                let matchPercentage = matchResult.percentage
-                
-                console.log("COMP", searchTrack.name, comparisonTrack.name)
+                let matchNamePercentage = matchResult.namePercentage
+                let matchArtistPercentage = matchResult.artistPercentage
+                let matchAlbumPercentage = matchResult.albumPercentage
 
                 if (matchValue == MatchValue.exactMatch){
                     matchedTrack = comparisonTrack
                     break
-                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
-                    highestPercentage = matchPercentage
+                } else if (matchArtistPercentage >= highestArtistPercentage){
                     matchedTrack = comparisonTrack
+                    highestArtistPercentage = matchArtistPercentage
+                    if (matchArtistPercentage == 1 && matchNamePercentage >= highestNamePercentage){
+                        matchedTrack = comparisonTrack
+                        highestNamePercentage = matchNamePercentage
+                        if (matchNamePercentage == 1 && matchAlbumPercentage >= highestAlbumPercentage){
+                            matchedTrack = comparisonTrack
+                            highestAlbumPercentage = matchAlbumPercentage
+                        }
+                    }
                 }
             }
             if (matchedTrack != undefined) {
                 resolve(matchedTrack)
             } else{
+                console.log("appleTrackNotFoundData; ", printerData)
                 reject("TRACK NOT FOUND")
             }
         })
         .catch((error:Error) => {
+            console.log("error", error, url)
             reject(error)
         })
     })
@@ -115,11 +169,9 @@ export function searchAppleTrack(searchTrack:Track): any {
 
 export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
     return new Promise (function(resolve, reject) {
+        let query = createQueryUri(searchAlbum.name, searchAlbum.artist)
 
-        let queryName = searchAlbum.name.replace(" ", "%20")
-        let queryArtist = searchAlbum.artist.replace(" ", "%20")
-
-        const url = `https://api.spotify.com/v1/search?q=${queryName.concat("%20", queryArtist)}&type=album`;
+        const url = `https://api.spotify.com/v1/search?q=${query}&type=album`;
         const options = {
             headers: {
                 Authorization: token.token
@@ -138,8 +190,8 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
                 let comparisonAlbum = new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
                 let matchResult = searchAlbum.compare(comparisonAlbum)
                 let matchValue = matchResult.value
-                let matchPercentage = matchResult.percentage
-                console.log(albumPreviewData.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
+                let matchPercentage = matchResult.albumPercentage
+                // console.log(albumPreviewData.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
                 if (matchValue == MatchValue.exactMatch){
                     spotifyAlbumId = albumPreviewData.id
                     break
@@ -172,13 +224,12 @@ export function searchAppleAlbum (searchAlbum:Album):any{
     //https://api.music.apple.com/v1/catalog/us/search?term=james+brown&limit=2&types=artists,albums
     return new Promise (function(resolve, reject) {
 
-        // var appleAlbumId:any = undefined
 
         //TODO: certain special characters trip up the query, needs to be refined
-        let queryName = encodeURI(searchAlbum.name.replace(/[&]/g, ''))
-        let queryArtist = encodeURI(searchAlbum.artist.replace(/[&]/g, ''))
+        //(Possibly Fixed Now, needs testing)
+        let query = createQueryUri(searchAlbum.name, searchAlbum.artist)
     
-        const url = `https://api.music.apple.com/v1/catalog/us/search?term=${ queryName.concat("%20", queryArtist)}&limit=5&types=albums`;
+        const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=albums`;
         const options = {
             headers: {
                 Authorization: `Bearer ${APPLE_TOKEN}`
@@ -199,12 +250,7 @@ export function searchAppleAlbum (searchAlbum:Album):any{
                 let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
                 let matchResult = searchAlbum.compare(comparisonAlbum)
                 let matchValue = matchResult.value
-                let matchPercentage = matchResult.percentage
-                // console.log(albumData)
-                console.log(albumData.attributes.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
-                console.log(albumData.attributes.artistName, "vs", comparisonAlbum.artist, matchValue, matchPercentage)
-
-                console.log("searching", comparisonAlbum.name, searchAlbum.name)
+                let matchPercentage = matchResult.albumPercentage
 
                 if (matchValue == MatchValue.exactMatch){
                     appleAlbumId = albumData.id
@@ -304,7 +350,7 @@ export function getSpotifyAlbum (albumId: string, token: SpotifyToken): any {
 
 export function getAppleAlbum (albumId: string): any {
     return new Promise (function(resolve, reject) {
-        console.log("id", albumId)
+        // console.log("id", albumId)
         const url = `https://api.music.apple.com/v1/catalog/us/albums/${albumId}`
         const options = {
             headers: {
@@ -373,27 +419,54 @@ export function getApplePlaylist (playlistId: string): any {
     })
 }
 
-// export function getAppleCatalogPlaylist (playlistId: string): any{
-//     return new Promise (function(resolve, reject) {
-//         console.log("myid,", playlistId)
-//         const url = `https://api.music.apple.com/v1/catalog/us/playlists/pl.${playlistId}`
-//         const options = {
-//             headers: {
-//                 Authorization: `Bearer ${APPLE_TOKEN}`
-//             }
-//         };
+function createQueryUri (songName: string, artist: string){
+    var songNameProcessed = songName.replace(/[-:&()]/g, '')
+    songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
+    songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
+    songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
+    songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
+    songNameProcessed = songNameProcessed.replace(/(\d+) mix/i, '')
 
-//         fetch(url, options)
-//         .then( (res:any) => res.json())
-//         .then( (data:any) => {
-//             console.log(data)
-//             let parsedResponse= <Apple.PlaylistResponse> data
-//             let playlist = new ApplePlaylist(parsedResponse.data[0])
-//             resolve(playlist)
-//         })
-//         .catch((error:Error) => {
-//             console.log(error)
-//             reject(error)
-//         })
-//     })
-// }
+    var artistProcessed = artist.replace(/[-:&()]/g, '')
+
+    console.log(artistProcessed)
+
+    let nameString = ""
+    if (songNameProcessed.length > 30){
+        let nameComponents = songNameProcessed.split(" ")
+        
+        for (let comp of nameComponents){
+            if (nameString.concat(' ', comp).length <= 30){
+                if (nameString != ""){
+                    nameString = nameString.concat(' ',comp)
+                } else {
+                    nameString = nameString.concat(comp)
+                }
+            } else {
+                break
+            }
+        }
+
+    } else {
+        nameString = songNameProcessed
+    }
+
+    let queryString = nameString
+    if(queryString.concat(' ', artistProcessed).length > 30){
+        let artistComponents = artistProcessed.split(" ")
+        
+        for (let comp of artistComponents){
+            console.log(comp)
+            if (queryString.concat(' ', comp).length <= 30){
+                queryString = queryString.concat(' ', comp)
+            } else {
+                break
+            }
+        }
+    } else {
+        queryString = queryString.concat(' ' , artistProcessed)
+    }
+
+    queryString = queryString.replace(/\s/g, '+')
+    return queryString
+}
