@@ -40,8 +40,6 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
                 let matchValue = matchResult.value
                 let matchPercentage = matchResult.percentage
 
-                console.log("sermch", searchTrack.name, comparisonTrack.name, matchResult, matchPercentage)
-
                 if (matchValue == MatchValue.exactMatch){
                     
                     matchedTrack = comparisonTrack
@@ -54,7 +52,6 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
             if (matchedTrack != undefined) {
                 resolve(matchedTrack)
             } else{
-                console.log("eee")
                 reject("TRACK NOT FOUND")
             }
         })
@@ -197,13 +194,14 @@ export function searchAppleAlbum (searchAlbum:Album):any{
             var highestPercentage = 0.0
 
             for (let albumData of parsedResponse.results.albums.data){
-
+                
                 let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
                 let matchResult = searchAlbum.compare(comparisonAlbum)
                 let matchValue = matchResult.value
                 let matchPercentage = matchResult.percentage
-                console.log(albumData)
+                // console.log(albumData)
                 console.log(albumData.attributes.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
+                console.log(albumData.attributes.artistName, "vs", comparisonAlbum.artist, matchValue, matchPercentage)
 
                 console.log("searching", comparisonAlbum.name, searchAlbum.name)
 
@@ -373,3 +371,28 @@ export function getApplePlaylist (playlistId: string): any {
         })
     })
 }
+
+// export function getAppleCatalogPlaylist (playlistId: string): any{
+//     return new Promise (function(resolve, reject) {
+//         console.log("myid,", playlistId)
+//         const url = `https://api.music.apple.com/v1/catalog/us/playlists/pl.${playlistId}`
+//         const options = {
+//             headers: {
+//                 Authorization: `Bearer ${APPLE_TOKEN}`
+//             }
+//         };
+
+//         fetch(url, options)
+//         .then( (res:any) => res.json())
+//         .then( (data:any) => {
+//             console.log(data)
+//             let parsedResponse= <Apple.PlaylistResponse> data
+//             let playlist = new ApplePlaylist(parsedResponse.data[0])
+//             resolve(playlist)
+//         })
+//         .catch((error:Error) => {
+//             console.log(error)
+//             reject(error)
+//         })
+//     })
+// }

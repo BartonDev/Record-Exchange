@@ -458,7 +458,10 @@ export class ApplePlaylist extends Playlist{
 
     constructor (data:Apple.PlaylistData){
         let name = data.attributes.name
-        let description = data.attributes.description.standard
+        var description = ''
+        if (data.attributes.description){
+            description = data.attributes.description.standard
+        }
         let rawCoverImage = data.attributes.artwork.url
         let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
         super(name, description, coverImage)
@@ -640,7 +643,7 @@ function compareStrings (string1: string, string2: string): number{
     
     let array1 = string1.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
     let array2 = string2.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
-
+    console.log(array1, array2)
     if (array1.length >= array2.length){
         let totalWords = array1.length
         var matchedWords = 0

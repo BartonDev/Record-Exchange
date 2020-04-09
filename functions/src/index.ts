@@ -32,6 +32,7 @@ export const getPreview = functions.https.onRequest((req, res)=> {
         let objectType = req.body.objectType
         let id = req.body.id 
 
+        console.log(serviceType, objectType, id)
         if (serviceType == ServiceType.spotify) {
             getSpotifyToken()
             .then((spotifyToken:SpotifyToken) =>{
@@ -75,6 +76,7 @@ export const getPreview = functions.https.onRequest((req, res)=> {
                     res.status(200).send(applePlaylist)
                 })
                 .catch((error:Error) =>{
+                    console.log(error)
                     res.status(400).send(error)
                 })
             } else if (objectType == ObjectType.album){
@@ -95,7 +97,7 @@ export const getPreview = functions.https.onRequest((req, res)=> {
                     res.status(400).send(error)
                 })
             } else {
-                res.status(400).send('Bad Info')
+                res.status(400).send('BAD INFO')
             }
         }
     })  
@@ -249,7 +251,8 @@ export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
     })
 })
 
-export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
+//Something is wrong here with cors, come back to it
+export const test = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         let authCode = req.body.authorizationCode
         let playlist = new JsonUniversalPlaylist(req.body.playlistData)
@@ -258,9 +261,9 @@ export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
             res.status(200).send()
         })
         .catch((error:Error) =>{
-            res.status(400).send()
+            console.log(error)
+            res.status(400).send(error)
         })
-        
     })
 })
 
@@ -274,6 +277,16 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
         console.log(userToken)
         console.log(APPLE_TOKEN)
         let playlistData = req.body.playlistData
+        console.log(playlistData)
+        var trackDataArray  = Array<any>()
+        for (let track of playlistData.tracks){
+            let trackData = {
+                "id": track.appleId,
+                "type":"songs"
+            }
+            trackDataArray.push(trackData)
+        }
+        console.log(trackDataArray)
         let data = {
             "attributes":{
                "name":playlistData.name,
@@ -281,20 +294,11 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
             },
             "relationships":{
                "tracks":{
-                  "data":[
-                     {
-                        "id":"1442994282",
-                        "type":"songs"
-                     },
-                     //435761212
-                     {
-                        "id":"435761212",
-                        "type":"songs"
-                     }
-                  ]
+                  "data": trackDataArray
                }
             }
         }
+        console.log("da", data)
 
         const options = {
             method: 'POST',
@@ -315,80 +319,5 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
             console.log("error", error)
         })
 
-    })
-})
-
-export const test1 = functions.https.onRequest((req, res) =>{
-    getSpotifyToken()
-    .then((token:SpotifyToken)=>{
-        //spotify:playlist:7GH5yEesYh8yyGNjBjpGql
-        const url = `https://api.spotify.com/v1/users//playlists/7GH5yEesYh8yyGNjBjpGql`;
-        const options = {
-            headers: {
-                Authorization: token.token
-            }
-        };
-
-        fetch(url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            res.send(data)
-            // let parsedResponse= <Spotify.PlaylistResponse> data
-            // let playlist = new SpotifyPlaylist(parsedResponse)
-            // resolve(playlist)
-        })
-        .catch((error:Error) => {
-            res.send(error)
-        })
-    })
-    
-})
-
-export const test2 = functions.https.onRequest((req, res) =>{
-    const url = `https://api.music.apple.com/v1/catalog/us/playlists/pl.u-8aAVXolfNbjxo0`
-    const options = {
-        headers: {
-            Authorization: `Bearer ${APPLE_TOKEN}`
-        }
-    };
-
-    fetch(url, options)
-    .then( (res:any) => res.json())
-    .then( (data:any) => {
-        // console.log(data)
-        res.send(data)
-        // let parsedResponse= <Apple.PlaylistResponse> data
-        // let playlist = new ApplePlaylist(parsedResponse.data[0])
-        // resolve(playlist)
-    })
-    .catch((error:Error) => {
-        res.send(error)
-        // reject(err or)
-    })
-    
-})
-
-
-
-
-
-export const test43 = functions.https.onRequest((req, res) =>{
-    getSpotifyToken()
-    .then((token:SpotifyToken) => {
-        const url = `https://api.spotify.com/v1/albums/3JbWR6CUfTLMRnlFFH2YJk`
-        const options = {
-            headers: {
-                Authorization: token.token
-            }
-        };
-        
-        fetch(url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            res.send(data)
-        })
-        .catch((error:Error) => {
-            res.send(error)
-        })
     })
 })

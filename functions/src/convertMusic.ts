@@ -146,12 +146,7 @@ export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):a
             .then((appleAlbum:AppleAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
                 storeUniversalAlbum(universalAlbum)
-                .then(()=>{
-                    resolve(universalAlbum)
-                })
-                .catch((error:Error)=>{
-                    reject (error)
-                })
+                resolve(universalAlbum)
             })
         })
         .catch((error:Error)=>{
@@ -170,12 +165,8 @@ export function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any
             .then((spotifyAlbum: SpotifyAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
                 storeUniversalAlbum(universalAlbum)
-                .then(()=>{
-                    resolve(universalAlbum)
-                })
-                .catch((error:Error)=>{
-                    reject (error)
-                })
+                resolve(universalAlbum)
+                
             })
         })
         .catch((error:Error)=>{
