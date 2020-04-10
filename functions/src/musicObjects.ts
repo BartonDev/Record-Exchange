@@ -1,6 +1,7 @@
 import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
 import {ObjectType} from "./musicEnums"
+import {msToStandard, compareStrings, sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
 
 export enum MatchValue {nonMatch, nearMatch, match, strongMatch, exactMatch }
 
@@ -45,40 +46,80 @@ export class Track {
         this.duration = duration
     }
 
-    compare (comparisonTrack: Track): MatchResult {
-        var namePercentage = 0
-        var artistPercentage = 0
-        var albumPercentage = 0 
-        if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase()){
-            namePercentage = 1
+    compare (comparisonTrack: Track):any {
+        var name1 = sanitizeStringBasic(this.name)
+        var name2 = sanitizeStringBasic(comparisonTrack.name)
+        if (name1 == name2){
+            //exact
         } else {
-            namePercentage = compareStrings(this.name.toLowerCase(), comparisonTrack.name.toLowerCase())
+            name1 = sanitizeStringComplex(name1)
+            name2 = sanitizeStringComplex(name2)
+            if (name1 == name2){
+                // exact
+            } else if (name1.length >= name2.length && name1.includes(name2)){
+                // similar
+            } else if (name2.length > name1.length && name2.includes(name1)){
+                //similar
+            } else {
+                //not 
+            }
         }
 
-        if (this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()){
-            artistPercentage = 1
-        } else {
-            artistPercentage = compareStrings(this.artist.toLowerCase(), comparisonTrack.artist.toLowerCase())
-        }
+        //artist
 
-        if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()){
-            albumPercentage = 1
+        var album1 = sanitizeStringBasic(this.album)
+        var album2 = sanitizeStringBasic(comparisonTrack.album)
+        if (album1 == album2){
+            //exact
         } else {
-            albumPercentage = compareStrings(this.album.toLowerCase(), comparisonTrack.album.toLowerCase())
-        }
-
-        if (namePercentage == 1 && albumPercentage == 1 && artistPercentage == 1){
-            return new MatchResult(MatchValue.exactMatch)
-        } else if (namePercentage == 1 && artistPercentage == 1) {
-            return new MatchResult(MatchValue.strongMatch, 1, 1, albumPercentage)
-        } else if (namePercentage >= 0.5 && artistPercentage >= 0.5){
-            return new MatchResult(MatchValue.match, namePercentage, artistPercentage, albumPercentage)
-        } else if (namePercentage > 0 && artistPercentage > 0){
-            return new MatchResult(MatchValue.nearMatch, namePercentage, artistPercentage, albumPercentage)
-        } else {
-            return new MatchResult(MatchValue.nonMatch)
+            album1 = sanitizeStringComplex(album1)
+            album2 = sanitizeStringComplex(album2)
+            if (album1 == album2){
+                // exact
+            } else if (album1.length >= album2.length && album1.includes(album2)){
+                // similar
+            } else if (album2.length > album1.length && album2.includes(album1)){
+                //similar
+            } else {
+                //not 
+            }
         }
     }
+
+    // compare (comparisonTrack: Track): MatchResult {
+    //     var namePercentage = 0
+    //     var artistPercentage = 0
+    //     var albumPercentage = 0 
+    //     if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase()){
+    //         namePercentage = 1
+    //     } else {
+    //         namePercentage = compareStrings(this.name.toLowerCase(), comparisonTrack.name.toLowerCase())
+    //     }
+
+    //     if (this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()){
+    //         artistPercentage = 1
+    //     } else {
+    //         artistPercentage = compareStrings(this.artist.toLowerCase(), comparisonTrack.artist.toLowerCase())
+    //     }
+
+    //     if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()){
+    //         albumPercentage = 1
+    //     } else {
+    //         albumPercentage = compareStrings(this.album.toLowerCase(), comparisonTrack.album.toLowerCase())
+    //     }
+
+    //     if (namePercentage == 1 && albumPercentage == 1 && artistPercentage == 1){
+    //         return new MatchResult(MatchValue.exactMatch)
+    //     } else if (namePercentage == 1 && artistPercentage == 1) {
+    //         return new MatchResult(MatchValue.strongMatch, 1, 1, albumPercentage)
+    //     } else if (namePercentage >= 0.5 && artistPercentage >= 0.5){
+    //         return new MatchResult(MatchValue.match, namePercentage, artistPercentage, albumPercentage)
+    //     } else if (namePercentage > 0 && artistPercentage > 0){
+    //         return new MatchResult(MatchValue.nearMatch, namePercentage, artistPercentage, albumPercentage)
+    //     } else {
+    //         return new MatchResult(MatchValue.nonMatch)
+    //     }
+    // }
 
     baseTrack():Track {
         return this
@@ -679,72 +720,7 @@ export class JsonUniversalPlaylist extends Playlist implements UniversalPlaylist
     }
 }
 
-function msToStandard(ms:string):string {
-    let totalSeconds = parseInt(ms)/1000
-    let minutes = Math.floor(totalSeconds/60)
-    var seconds = `${Math.floor(totalSeconds%60)}`
-    if (seconds.length == 0) {
-        seconds = '00'
-    } else if (seconds.length == 1){
-        seconds = '0' + seconds
-    }
-    let standardTime = `${minutes}:${seconds}`
-    return standardTime
-}
 
-function compareStrings (string1: string, string2: string): number{
-    
-    let array1 = string1.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
-    let array2 = string2.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
-    // console.log(array1, array2)
-    if (array1.length >= array2.length){
-        let totalWords = array1.length
-        var matchedWords = 0
-        for (let word of array1){
-            if (array2.includes(word)){
-                matchedWords += 1
-            }
-        }
-        let matchPercentage = matchedWords/totalWords
-        return matchPercentage
-    }
-    else {
-        let totalWords = array2.length
-        var matchedWords = 0
-        for (let word of array2){
-            if (array1.includes(word)){
-                matchedWords += 1
-            }
-        }
-        let matchPercentage = matchedWords/totalWords
-        return matchPercentage
-    }
-}
 
-function sanitizeStringBasic (string: string): string {
-    var processedString = string
 
-    var processedString = processedString.replace(/[-:&!?()]/g, '')
-    processedString = processedString.replace(/\s+/g,' ').trim()
-
-    return processedString
-}
-
-function sanitizeStringComplex (string: string): string {
-    var processedString = string
-    if (processedString.replace(/(\(.*?\))/i, '').trim() != ''){
-        processedString = processedString.replace(/(\(.*?\))/i, '').trim()
-    }
-    processedString = processedString.replace(/[-:&!?()]/g, '')
-    processedString = processedString.replace(/remastered\ (\d+)/i, '')
-    processedString = processedString.replace(/remaster\ (\d+)/i, '')
-    processedString = processedString.replace(/(?<=remastered) version/i, '')
-    processedString = processedString.replace(/(\d+) remastered/i, '')
-    processedString = processedString.replace(/(\d+) remaster/i, '')
-    processedString = processedString.replace(/(\d+) mix/i, '')
-    processedString = processedString.replace(/\s+/g,' ').trim()
-
-    return processedString
-    
-}
 

@@ -5,6 +5,7 @@ import {Track, AppleTrack, SpotifyTrack} from "./musicObjects"
 import {Album, SpotifyAlbum, AppleAlbum} from "./musicObjects"
 import {ApplePlaylist, SpotifyPlaylist} from "./musicObjects"
 import {MatchValue} from "./musicObjects"
+import {sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
 
 import {APPLE_TOKEN} from "./credentials"
 
@@ -425,60 +426,60 @@ export function getApplePlaylist (playlistId: string): any {
 }
 
 function createQueryUri (songName: string, artist: string){
-    var songNameProcessed = songName
-    if (songNameProcessed.replace(/(\(.*?\))/i, '').trim() != ''){
-        songNameProcessed = songNameProcessed.replace(/(\(.*?\))/i, '').trim()
-    }
-    songNameProcessed = songNameProcessed.replace(/[-:&!?()]/g, '')
-    songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
-    songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
-    songNameProcessed = songNameProcessed.replace(/(?<=remastered) version/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) mix/i, '')
-    songNameProcessed = songNameProcessed.replace(/\s+/g,' ').trim()
+    var songNameProcessed = sanitizeStringComplex(songName)
+    // if (songNameProcessed.replace(/(\(.*?\))/i, '').trim() != ''){
+    //     songNameProcessed = songNameProcessed.replace(/(\(.*?\))/i, '').trim()
+    // }
+    // songNameProcessed = songNameProcessed.replace(/[-:&!?()]/g, '')
+    // songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
+    // songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
+    // songNameProcessed = songNameProcessed.replace(/(?<=remastered) version/i, '')
+    // songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
+    // songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
+    // songNameProcessed = songNameProcessed.replace(/(\d+) mix/i, '')
+    // songNameProcessed = songNameProcessed.replace(/\s+/g,' ').trim()
 
-    var artistProcessed = artist.replace(/[-:&()]/g, '')
-    artistProcessed = artistProcessed.replace(/\s+/g,' ').trim()
+    var artistProcessed = sanitizeStringBasic(artist)
+    // artistProcessed = artistProcessed.replace(/\s+/g,' ').trim()
 
-    console.log(artistProcessed)
+    // console.log(artistProcessed)
 
-    let nameString = ""
-    if (songNameProcessed.length > 50){
-        let nameComponents = songNameProcessed.split(" ")
+    // let nameString = ""
+    // if (songNameProcessed.length > 50){
+    //     let nameComponents = songNameProcessed.split(" ")
         
-        for (let comp of nameComponents){
-            if (nameString.concat(' ', comp).length <= 50){
-                if (nameString != ""){
-                    nameString = nameString.concat(' ',comp)
-                } else {
-                    nameString = nameString.concat(comp)
-                }
-            } else {
-                break
-            }
-        }
+    //     for (let comp of nameComponents){
+    //         if (nameString.concat(' ', comp).length <= 50){
+    //             if (nameString != ""){
+    //                 nameString = nameString.concat(' ',comp)
+    //             } else {
+    //                 nameString = nameString.concat(comp)
+    //             }
+    //         } else {
+    //             break
+    //         }
+    //     }
 
-    } else {
-        nameString = songNameProcessed
-    }
+    // } else {
+    //     nameString = songNameProcessed
+    // }
 
-    let queryString = nameString
-    if(queryString.concat(' ', artistProcessed).length > 50){
-        let artistComponents = artistProcessed.split(" ")
+    // let queryString = nameString
+    // if(queryString.concat(' ', artistProcessed).length > 50){
+    //     let artistComponents = artistProcessed.split(" ")
         
-        for (let comp of artistComponents){
-            console.log(comp)
-            if (queryString.concat(' ', comp).length <= 50){
-                queryString = queryString.concat(' ', comp)
-            } else {
-                break
-            }
-        }
-    } else {
-        queryString = queryString.concat(' ' , artistProcessed)
-    }
-
+    //     for (let comp of artistComponents){
+    //         console.log(comp)
+    //         if (queryString.concat(' ', comp).length <= 50){
+    //             queryString = queryString.concat(' ', comp)
+    //         } else {
+    //             break
+    //         }
+    //     }
+    // } else {
+    //     queryString = queryString.concat(' ' , artistProcessed)
+    // }
+    var queryString = songNameProcessed.concat(" ", artistProcessed)
     queryString = queryString.replace(/\s/g, '+')
     return queryString
 }
