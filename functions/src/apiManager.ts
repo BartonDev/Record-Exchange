@@ -93,7 +93,7 @@ export function searchAppleTrack(searchTrack:Track): any {
         //TODO: certain special characters trip up the query, needs to be refined
 
         let query = createQueryUri(searchTrack.name, searchTrack.artist)
-        console.log(query)
+        console.log("Q", query)
     
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=songs`;
         // console.log('URL', url)
@@ -119,23 +119,27 @@ export function searchAppleTrack(searchTrack:Track): any {
             var highestAlbumPercentage = 0.0
 
             var printerData = Array<any>()
-
+            
 
             for (let trackData of parsedResponse.results.songs.data){
                 let comparisonTrack = new AppleTrack(trackData)
 
 
-                let dat = {
-                    "search": JSON.stringify(searchTrack),
-                    "comparison": JSON.stringify(comparisonTrack)
-                }
-                printerData.push(dat)
+                
 
                 let matchResult = searchTrack.compare(comparisonTrack)
                 let matchValue = matchResult.value
                 let matchNamePercentage = matchResult.namePercentage
                 let matchArtistPercentage = matchResult.artistPercentage
                 let matchAlbumPercentage = matchResult.albumPercentage
+
+                let dat = {
+                    "search": JSON.stringify(searchTrack),
+                    "comparison": JSON.stringify(comparisonTrack),
+                    "percentages": JSON.stringify([matchNamePercentage, matchNamePercentage, matchAlbumPercentage])
+                }
+                printerData.push(dat)
+                
 
                 if (matchValue == MatchValue.exactMatch){
                     matchedTrack = comparisonTrack
@@ -154,6 +158,7 @@ export function searchAppleTrack(searchTrack:Track): any {
                 }
             }
             if (matchedTrack != undefined) {
+                console.log("printerData; ", printerData)
                 resolve(matchedTrack)
             } else{
                 console.log("appleTrackNotFoundData; ", printerData)
@@ -420,23 +425,30 @@ export function getApplePlaylist (playlistId: string): any {
 }
 
 function createQueryUri (songName: string, artist: string){
-    var songNameProcessed = songName.replace(/[-:&()]/g, '')
+    var songNameProcessed = songName
+    if (songNameProcessed.replace(/(\(.*?\))/i, '').trim() != ''){
+        songNameProcessed = songNameProcessed.replace(/(\(.*?\))/i, '').trim()
+    }
+    songNameProcessed = songNameProcessed.replace(/[-:&!?()]/g, '')
     songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
     songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
+    songNameProcessed = songNameProcessed.replace(/(?<=remastered) version/i, '')
     songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
     songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
     songNameProcessed = songNameProcessed.replace(/(\d+) mix/i, '')
+    songNameProcessed = songNameProcessed.replace(/\s+/g,' ').trim()
 
     var artistProcessed = artist.replace(/[-:&()]/g, '')
+    artistProcessed = artistProcessed.replace(/\s+/g,' ').trim()
 
     console.log(artistProcessed)
 
     let nameString = ""
-    if (songNameProcessed.length > 30){
+    if (songNameProcessed.length > 50){
         let nameComponents = songNameProcessed.split(" ")
         
         for (let comp of nameComponents){
-            if (nameString.concat(' ', comp).length <= 30){
+            if (nameString.concat(' ', comp).length <= 50){
                 if (nameString != ""){
                     nameString = nameString.concat(' ',comp)
                 } else {
@@ -452,12 +464,12 @@ function createQueryUri (songName: string, artist: string){
     }
 
     let queryString = nameString
-    if(queryString.concat(' ', artistProcessed).length > 30){
+    if(queryString.concat(' ', artistProcessed).length > 50){
         let artistComponents = artistProcessed.split(" ")
         
         for (let comp of artistComponents){
             console.log(comp)
-            if (queryString.concat(' ', comp).length <= 30){
+            if (queryString.concat(' ', comp).length <= 50){
                 queryString = queryString.concat(' ', comp)
             } else {
                 break

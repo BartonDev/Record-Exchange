@@ -720,3 +720,31 @@ function compareStrings (string1: string, string2: string): number{
         return matchPercentage
     }
 }
+
+function sanitizeStringBasic (string: string): string {
+    var processedString = string
+
+    var processedString = processedString.replace(/[-:&!?()]/g, '')
+    processedString = processedString.replace(/\s+/g,' ').trim()
+
+    return processedString
+}
+
+function sanitizeStringComplex (string: string): string {
+    var processedString = string
+    if (processedString.replace(/(\(.*?\))/i, '').trim() != ''){
+        processedString = processedString.replace(/(\(.*?\))/i, '').trim()
+    }
+    processedString = processedString.replace(/[-:&!?()]/g, '')
+    processedString = processedString.replace(/remastered\ (\d+)/i, '')
+    processedString = processedString.replace(/remaster\ (\d+)/i, '')
+    processedString = processedString.replace(/(?<=remastered) version/i, '')
+    processedString = processedString.replace(/(\d+) remastered/i, '')
+    processedString = processedString.replace(/(\d+) remaster/i, '')
+    processedString = processedString.replace(/(\d+) mix/i, '')
+    processedString = processedString.replace(/\s+/g,' ').trim()
+
+    return processedString
+    
+}
+

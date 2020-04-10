@@ -323,6 +323,69 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     })
 })
 
+export const test1345 = functions.https.onRequest((req, res) =>{
+    let songName = "(Blue He!n Geology? Version)"
+    let artist = "Me  YOU"
+
+
+    var songNameProcessed = songName
+    if (songNameProcessed.replace(/(\(.*?\))/i, '').trim() != ''){
+        songNameProcessed = songNameProcessed.replace(/(\(.*?\))/i, '').trim()
+    }
+    songNameProcessed = songNameProcessed.replace(/[-:&!?()]/g, '')
+    songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
+    songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
+    songNameProcessed = songNameProcessed.replace(/(?<=remastered) version/i, '')
+    songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
+    songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
+    songNameProcessed = songNameProcessed.replace(/(\d+) mix/i, '')
+    songNameProcessed = songNameProcessed.replace(/\s+/g,' ').trim()
+
+    var artistProcessed = artist.replace(/[-:&()]/g, '')
+    artistProcessed = artistProcessed.replace(/\s+/g,' ').trim()
+
+    console.log(artistProcessed)
+
+    let nameString = ""
+    if (songNameProcessed.length > 40){
+        let nameComponents = songNameProcessed.split(" ")
+        
+        for (let comp of nameComponents){
+            if (nameString.concat(' ', comp).length <= 40){
+                if (nameString != ""){
+                    nameString = nameString.concat(' ',comp)
+                } else {
+                    nameString = nameString.concat(comp)
+                }
+            } else {
+                break
+            }
+        }
+
+    } else {
+        nameString = songNameProcessed
+    }
+
+    let queryString = nameString
+    if(queryString.concat(' ', artistProcessed).length > 40){
+        let artistComponents = artistProcessed.split(" ")
+        
+        for (let comp of artistComponents){
+            console.log(comp)
+            if (queryString.concat(' ', comp).length <= 40){
+                queryString = queryString.concat(' ', comp)
+            } else {
+                break
+            }
+        }
+    } else {
+        queryString = queryString.concat(' ' , artistProcessed)
+    }
+
+    queryString = queryString.replace(/\s/g, '+')
+    res.send( queryString)
+})
+
 export const test5463 = functions.https.onRequest((req, res) =>{
     // let query = 
     // let queryName = searchTrack.name.replace(" ", "%20")
