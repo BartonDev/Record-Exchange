@@ -5,7 +5,7 @@ export function sanitizeStringBasic (string: string): string {
     processedString = processedString.replace(/[-:&!?()]/g, '')
     processedString = processedString.replace(/\s+/g,' ').trim()
     processedString = processedString.toLowerCase()
-    
+
     return processedString
 }
 
@@ -14,6 +14,8 @@ export function sanitizeStringComplex (string: string): string {
     if (processedString.replace(/(\(.*?\))/i, '').trim() != ''){
         processedString = processedString.replace(/(\(.*?\))/i, '').trim()
     }
+    processedString = processedString.replace(/(- single)/i, '')
+    processedString = processedString.replace(/(- ep)/i, '')
     processedString = processedString.replace(/[-:&!?()]/g, '')
     processedString = processedString.replace(/remastered\ (\d+)/i, '')
     processedString = processedString.replace(/remaster\ (\d+)/i, '')

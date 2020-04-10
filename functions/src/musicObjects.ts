@@ -1,33 +1,47 @@
 import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
 import {ObjectType} from "./musicEnums"
-import {msToStandard, compareStrings, sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
+import {msToStandard, sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
 
-export enum MatchValue {nonMatch, nearMatch, match, strongMatch, exactMatch }
+export enum MatchValue {different, similar, match}
 
-export class MatchResult {
-    value: MatchValue
-    namePercentage: number
-    artistPercentage: number
-    albumPercentage: number
+// export class MatchResult {
+//     value: MatchValue
+//     namePercentage: number
+//     artistPercentage: number
+//     albumPercentage: number
 
-    constructor(value: MatchValue, namePercentage: number = 0, artistPercentage: number = 0 , albumPercentage: number = 0){
-        this.value = value
+//     constructor(value: MatchValue, namePercentage: number = 0, artistPercentage: number = 0 , albumPercentage: number = 0){
+//         this.value = value
 
-        if (this.value == MatchValue.exactMatch){
-            this.namePercentage = 1
-            this.artistPercentage = 1
-            this.albumPercentage = 1
-        } else if (this.value == MatchValue.nonMatch) {
-            this.namePercentage = 0
-            this.artistPercentage = 0
-            this.albumPercentage = 0
-        } else {
-            this.namePercentage = namePercentage
-            this.artistPercentage = artistPercentage
-            this.albumPercentage = albumPercentage
-        }
+//         if (this.value == MatchValue.exactMatch){
+//             this.namePercentage = 1
+//             this.artistPercentage = 1
+//             this.albumPercentage = 1
+//         } else if (this.value == MatchValue.nonMatch) {
+//             this.namePercentage = 0
+//             this.artistPercentage = 0
+//             this.albumPercentage = 0
+//         } else {
+//             this.namePercentage = namePercentage
+//             this.artistPercentage = artistPercentage
+//             this.albumPercentage = albumPercentage
+//         }
         
+//     }
+// }
+
+export class ComparisonResult {
+    nameResult: MatchValue
+    artistResult: MatchValue
+    albumResult: MatchValue
+    value: number
+    constructor(nameResult: MatchValue, artistResult: MatchValue, albumResult: MatchValue){
+        this.nameResult = nameResult
+        this.artistResult = artistResult
+        this.albumResult = albumResult
+
+        this.value = nameResult * 15 + artistResult * 10 + albumResult * 1
     }
 }
 
@@ -46,80 +60,59 @@ export class Track {
         this.duration = duration
     }
 
-    compare (comparisonTrack: Track):any {
+    compare (comparisonTrack: Track): ComparisonResult {
+        let nameResult = MatchValue.different
+        let artistResult = MatchValue.different
+        let albumResult = MatchValue.different
+
         var name1 = sanitizeStringBasic(this.name)
         var name2 = sanitizeStringBasic(comparisonTrack.name)
         if (name1 == name2){
-            //exact
+            nameResult = MatchValue.match
         } else {
             name1 = sanitizeStringComplex(name1)
             name2 = sanitizeStringComplex(name2)
             if (name1 == name2){
-                // exact
+                nameResult = MatchValue.match
             } else if (name1.length >= name2.length && name1.includes(name2)){
-                // similar
+                nameResult = MatchValue.similar
             } else if (name2.length > name1.length && name2.includes(name1)){
-                //similar
+                nameResult = MatchValue.similar
             } else {
-                //not 
+                nameResult = MatchValue.different
             }
         }
 
-        //artist
+        var artist1 = sanitizeStringBasic(this.artist)
+        var artist2 = sanitizeStringBasic(comparisonTrack.artist)
+        if (artist1 == artist2) {
+            artistResult = MatchValue.match
+        } else if (artist2.includes(artist1)) {
+            artistResult = MatchValue.similar
+        } else {
+            artistResult = MatchValue.different
+        }
 
         var album1 = sanitizeStringBasic(this.album)
         var album2 = sanitizeStringBasic(comparisonTrack.album)
         if (album1 == album2){
-            //exact
+            albumResult = MatchValue.match
         } else {
             album1 = sanitizeStringComplex(album1)
             album2 = sanitizeStringComplex(album2)
             if (album1 == album2){
-                // exact
+                albumResult = MatchValue.match
             } else if (album1.length >= album2.length && album1.includes(album2)){
-                // similar
+                albumResult = MatchValue.similar
             } else if (album2.length > album1.length && album2.includes(album1)){
-                //similar
+                albumResult = MatchValue.similar
             } else {
-                //not 
+                albumResult = MatchValue.different
             }
         }
+
+        return new ComparisonResult(nameResult, artistResult, albumResult)
     }
-
-    // compare (comparisonTrack: Track): MatchResult {
-    //     var namePercentage = 0
-    //     var artistPercentage = 0
-    //     var albumPercentage = 0 
-    //     if (this.name.toLowerCase() == comparisonTrack.name.toLowerCase()){
-    //         namePercentage = 1
-    //     } else {
-    //         namePercentage = compareStrings(this.name.toLowerCase(), comparisonTrack.name.toLowerCase())
-    //     }
-
-    //     if (this.artist.toLowerCase() == comparisonTrack.artist.toLowerCase()){
-    //         artistPercentage = 1
-    //     } else {
-    //         artistPercentage = compareStrings(this.artist.toLowerCase(), comparisonTrack.artist.toLowerCase())
-    //     }
-
-    //     if (this.album.toLowerCase() == comparisonTrack.album.toLowerCase()){
-    //         albumPercentage = 1
-    //     } else {
-    //         albumPercentage = compareStrings(this.album.toLowerCase(), comparisonTrack.album.toLowerCase())
-    //     }
-
-    //     if (namePercentage == 1 && albumPercentage == 1 && artistPercentage == 1){
-    //         return new MatchResult(MatchValue.exactMatch)
-    //     } else if (namePercentage == 1 && artistPercentage == 1) {
-    //         return new MatchResult(MatchValue.strongMatch, 1, 1, albumPercentage)
-    //     } else if (namePercentage >= 0.5 && artistPercentage >= 0.5){
-    //         return new MatchResult(MatchValue.match, namePercentage, artistPercentage, albumPercentage)
-    //     } else if (namePercentage > 0 && artistPercentage > 0){
-    //         return new MatchResult(MatchValue.nearMatch, namePercentage, artistPercentage, albumPercentage)
-    //     } else {
-    //         return new MatchResult(MatchValue.nonMatch)
-    //     }
-    // }
 
     baseTrack():Track {
         return this
@@ -311,18 +304,57 @@ export class Album {
     }
 
     //TODO: improve album comparison, possibly involving track count or release date
-    compare (comparisonAlbum: Album): MatchResult {
-        if (this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
-            if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase()){
-                return new MatchResult(MatchValue.exactMatch, 100)
-            }
-            else {
-                let matchPercentage = compareStrings(this.name, comparisonAlbum.name)
-                return new MatchResult(MatchValue.match, matchPercentage)
+    // compare (comparisonAlbum: Album): MatchResult {
+    //     if (this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
+    //         if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase()){
+    //             return new MatchResult(MatchValue.exactMatch, 100)
+    //         }
+    //         else {
+    //             let matchPercentage = compareStrings(this.name, comparisonAlbum.name)
+    //             return new MatchResult(MatchValue.match, matchPercentage)
+    //         }
+    //     }
+    //     return new MatchResult(MatchValue.nonMatch, 0)
+    // }
+    // compare (comparisonAlbum: Album):any {}
+
+    compare (comparisonAlbum: Album): ComparisonResult {
+
+        let nameResult = MatchValue.different
+        let artistResult = MatchValue.different
+        // let albumResult = MatchValue.different
+
+        var name1 = sanitizeStringBasic(this.name)
+        var name2 = sanitizeStringBasic(comparisonAlbum.name)
+        if (name1 == name2){
+            nameResult = MatchValue.match
+        } else {
+            name1 = sanitizeStringComplex(name1)
+            name2 = sanitizeStringComplex(name2)
+            if (name1 == name2){
+                nameResult = MatchValue.match
+            } else if (name1.length >= name2.length && name1.includes(name2)){
+                nameResult = MatchValue.similar
+            } else if (name2.length > name1.length && name2.includes(name1)){
+                nameResult = MatchValue.similar
+            } else {
+                nameResult = MatchValue.different
             }
         }
-        return new MatchResult(MatchValue.nonMatch, 0)
+
+        var artist1 = sanitizeStringBasic(this.artist)
+        var artist2 = sanitizeStringBasic(comparisonAlbum.artist)
+        if (artist1 == artist2) {
+            artistResult = MatchValue.match
+        } else if (artist2.includes(artist1)) {
+            artistResult = MatchValue.similar
+        } else {
+            artistResult = MatchValue.different
+        }
+
+        return new  ComparisonResult(nameResult, artistResult, MatchValue.match)
     }
+    
 
     baseAlbum():Album {
         return this

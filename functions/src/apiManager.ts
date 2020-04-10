@@ -4,7 +4,7 @@ import {SpotifyToken} from "./SpotifyTokenManager"
 import {Track, AppleTrack, SpotifyTrack} from "./musicObjects"
 import {Album, SpotifyAlbum, AppleAlbum} from "./musicObjects"
 import {ApplePlaylist, SpotifyPlaylist} from "./musicObjects"
-import {MatchValue} from "./musicObjects"
+// import {MatchValue} from "./musicObjects"
 import {sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
 
 import {APPLE_TOKEN} from "./credentials"
@@ -25,64 +25,41 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
             }
         };
 
-        var printerData = Array<any>()
-
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
             let parsedResponse = <Spotify.SearchResponse> data
 
-            var matchedTrack:any = undefined
-            var highestArtistPercentage = 0.0
-            var highestNamePercentage = 0.0
-            var highestAlbumPercentage = 0.0
-
-            
+            var bestMatch :any = undefined
+            var bestMatchComparisonResult: any = undefined
 
             for (let trackData of parsedResponse.tracks.items){
                 let comparisonTrack = new SpotifyTrack(trackData)
+                let comparisonResult = searchTrack.compare(comparisonTrack)
+                let comparisonValue = comparisonResult.value
 
-                let dat = {
-                    "search": JSON.stringify(searchTrack),
-                    "comparison": JSON.stringify(comparisonTrack)
-                }
-                printerData.push(dat)
-
-                let matchResult = searchTrack.compare(comparisonTrack)
-                let matchValue = matchResult.value
-                let matchNamePercentage = matchResult.namePercentage
-                let matchArtistPercentage = matchResult.artistPercentage
-                let matchAlbumPercentage = matchResult.albumPercentage
-
-                if (matchValue == MatchValue.exactMatch){
-                    matchedTrack = comparisonTrack
+                if (comparisonValue == 52) {
+                    bestMatch = comparisonTrack
                     break
-                } else if (matchArtistPercentage >= highestArtistPercentage){
-                    matchedTrack = comparisonTrack
-                    highestArtistPercentage = matchArtistPercentage
-                    if (matchArtistPercentage == 1 && matchNamePercentage >= highestNamePercentage){
-                        matchedTrack = comparisonTrack
-                        highestNamePercentage = matchNamePercentage
-                        if (matchNamePercentage == 1 && matchAlbumPercentage >= highestAlbumPercentage){
-                            matchedTrack = comparisonTrack
-                            highestAlbumPercentage = matchAlbumPercentage
-                        }
+                } else if (bestMatch && bestMatchComparisonResult){
+                    if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                        bestMatch = comparisonTrack
+                        bestMatchComparisonResult = comparisonResult
                     }
-                }
-                // else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
-                //     highestPercentage = matchPercentage
-                //     matchedTrack = comparisonTrack
-                // }
+
+                } else if (comparisonValue >= 25) {
+                    bestMatch = comparisonTrack
+                    bestMatchComparisonResult = comparisonResult
+                } 
+
             }
-            if (matchedTrack != undefined) {
-                resolve(matchedTrack)
+            if (bestMatch != undefined) {
+                resolve(bestMatch)
             } else{
-                // console.log("Not Found Data: ", JSON.stringify(printerData))
                 reject("TRACK NOT FOUND")
             }
         })
         .catch((error:Error) => {
-            // console.log("REJE")
             reject(error)
         })
     })
@@ -94,8 +71,9 @@ export function searchAppleTrack(searchTrack:Track): any {
         //TODO: certain special characters trip up the query, needs to be refined
 
         let query = createQueryUri(searchTrack.name, searchTrack.artist)
-        console.log("Q", query)
-    
+        // console.log("Q", query)
+        // var printerData = Array<any>()
+
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=songs`;
         // console.log('URL', url)
         const options = {
@@ -105,66 +83,53 @@ export function searchAppleTrack(searchTrack:Track): any {
         };
         fetch(url, options)
         .then( (res:any) => {
-            console.log("rpe", res)
+            // console.log("rpe", res)
             return res.json()
         })
         .then( (data:any) => {
-            console.log("day", data)
-
+            // console.log("day", data)
 
             let parsedResponse = <Apple.TrackSearchResponse> data
 
-            var matchedTrack:any = undefined
-            var highestArtistPercentage = 0.0
-            var highestNamePercentage = 0.0
-            var highestAlbumPercentage = 0.0
+            var bestMatch :any = undefined
+            var bestMatchComparisonResult: any = undefined
 
-            var printerData = Array<any>()
             
 
             for (let trackData of parsedResponse.results.songs.data){
                 let comparisonTrack = new AppleTrack(trackData)
+                let comparisonResult = searchTrack.compare(comparisonTrack)
+                let comparisonValue = comparisonResult.value
 
+                // let dat = {
+                //     "search": JSON.stringify(searchTrack),
+                //     "comparison": JSON.stringify(comparisonTrack),
+                //     "result": JSON.stringify(comparisonResult)
+                // }
+                // printerData.push(dat)
 
-                
-
-                let matchResult = searchTrack.compare(comparisonTrack)
-                let matchValue = matchResult.value
-                let matchNamePercentage = matchResult.namePercentage
-                let matchArtistPercentage = matchResult.artistPercentage
-                let matchAlbumPercentage = matchResult.albumPercentage
-
-                let dat = {
-                    "search": JSON.stringify(searchTrack),
-                    "comparison": JSON.stringify(comparisonTrack),
-                    "percentages": JSON.stringify([matchNamePercentage, matchNamePercentage, matchAlbumPercentage])
-                }
-                printerData.push(dat)
-                
-
-                if (matchValue == MatchValue.exactMatch){
-                    matchedTrack = comparisonTrack
+                if (comparisonValue == 52) {
+                    bestMatch = comparisonTrack
                     break
-                } else if (matchArtistPercentage >= highestArtistPercentage){
-                    matchedTrack = comparisonTrack
-                    highestArtistPercentage = matchArtistPercentage
-                    if (matchArtistPercentage == 1 && matchNamePercentage >= highestNamePercentage){
-                        matchedTrack = comparisonTrack
-                        highestNamePercentage = matchNamePercentage
-                        if (matchNamePercentage == 1 && matchAlbumPercentage >= highestAlbumPercentage){
-                            matchedTrack = comparisonTrack
-                            highestAlbumPercentage = matchAlbumPercentage
-                        }
+                } else if (bestMatch && bestMatchComparisonResult){
+                    if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                        bestMatch = comparisonTrack
+                        bestMatchComparisonResult = comparisonResult
                     }
-                }
+
+                } else if (comparisonValue >= 25) {
+                    bestMatch = comparisonTrack
+                    bestMatchComparisonResult = comparisonResult
+                } 
+
             }
-            if (matchedTrack != undefined) {
-                console.log("printerData; ", printerData)
-                resolve(matchedTrack)
+            if (bestMatch != undefined) {
+                // console.log("COMPLETION DATA: ", printerData)
+                resolve(bestMatch)
             } else{
-                console.log("appleTrackNotFoundData; ", printerData)
                 reject("TRACK NOT FOUND")
             }
+
         })
         .catch((error:Error) => {
             console.log("error", error, url)
@@ -187,38 +152,79 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
-            let parsedResponse = <Spotify.AlbumSearchResponse>data
 
-            var spotifyAlbumId:any = undefined
-            var highestPercentage = 0.0
+            let parsedResponse = <Spotify.AlbumSearchResponse>data
+            console.log(parsedResponse)
+            // var bestMatch :any = undefined
+            var bestMatchComparisonResult: any = undefined
+            var bestMatchId: any = undefined
 
             for (let albumPreviewData of parsedResponse.albums.items){
-                let comparisonAlbum = new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
-                let matchResult = searchAlbum.compare(comparisonAlbum)
-                let matchValue = matchResult.value
-                let matchPercentage = matchResult.albumPercentage
-                // console.log(albumPreviewData.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
-                if (matchValue == MatchValue.exactMatch){
-                    spotifyAlbumId = albumPreviewData.id
-                    break
-                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
-                    highestPercentage = matchPercentage
-                    spotifyAlbumId = albumPreviewData.id
-                }
-            }
+                let comparisonAlbum =  new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
+                let comparisonResult = searchAlbum.compare(comparisonAlbum)
+                let comparisonValue = comparisonResult.value
 
-            if (spotifyAlbumId){
-                getSpotifyAlbum(spotifyAlbumId, token)
+                if (comparisonValue == 52) {
+                    bestMatchId = albumPreviewData.id
+                    break
+                } else if (bestMatchId && bestMatchComparisonResult){
+                    if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                        bestMatchId = albumPreviewData.id
+                        bestMatchComparisonResult = comparisonResult
+                    }
+
+                } else if (comparisonValue >= 25) {
+                    bestMatchId = albumPreviewData.id
+                    bestMatchComparisonResult = comparisonResult
+                } 
+
+            }
+            if (bestMatchId != undefined) {
+                getSpotifyAlbum(bestMatchId, token)
                 .then((spotifyAlbum:SpotifyAlbum) =>{
                     resolve(spotifyAlbum)
                 })
                 .catch((error:Error) =>{
+                    console.log("ERR", error)
                     reject(error)
                 })
-            }
-            else {
+            } else{
                 reject("ALBUM NOT FOUND")
             }
+
+            
+            // let parsedResponse = <Spotify.AlbumSearchResponse>data
+
+            // var spotifyAlbumId:any = undefined
+            // var highestPercentage = 0.0
+
+            // for (let albumPreviewData of parsedResponse.albums.items){
+            //     let comparisonAlbum = new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
+            //     let matchResult = searchAlbum.compare(comparisonAlbum)
+            //     let matchValue = matchResult.value
+            //     let matchPercentage = matchResult.albumPercentage
+            //     // console.log(albumPreviewData.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
+            //     if (matchValue == MatchValue.exactMatch){
+            //         spotifyAlbumId = albumPreviewData.id
+            //         break
+            //     } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
+            //         highestPercentage = matchPercentage
+            //         spotifyAlbumId = albumPreviewData.id
+            //     }
+            // }
+
+            // if (spotifyAlbumId){
+            //     getSpotifyAlbum(spotifyAlbumId, token)
+            //     .then((spotifyAlbum:SpotifyAlbum) =>{
+            //         resolve(spotifyAlbum)
+            //     })
+            //     .catch((error:Error) =>{
+            //         reject(error)
+            //     })
+            // }
+            // else {
+            //     reject("ALBUM NOT FOUND")
+            // }
         })
         .catch((error:Error) => {
             reject(error)
@@ -245,39 +251,80 @@ export function searchAppleAlbum (searchAlbum:Album):any{
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
-            // resolve(data)
+
+
             let parsedResponse = <Apple.AlbumSearchResponse> data
 
-            var appleAlbumId:any = undefined
-            var highestPercentage = 0.0
+            // var bestMatch :any = undefined
+            var bestMatchComparisonResult: any = undefined
+            var bestMatchId: any = undefined
 
             for (let albumData of parsedResponse.results.albums.data){
-                
-                let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
-                let matchResult = searchAlbum.compare(comparisonAlbum)
-                let matchValue = matchResult.value
-                let matchPercentage = matchResult.albumPercentage
+                let comparisonAlbum =  new Album(albumData.attributes.name, albumData.attributes.artistName)
+                let comparisonResult = searchAlbum.compare(comparisonAlbum)
+                let comparisonValue = comparisonResult.value
 
-                if (matchValue == MatchValue.exactMatch){
-                    appleAlbumId = albumData.id
+                if (comparisonValue == 52) {
+                    bestMatchId = albumData.id
                     break
-                } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
-                    highestPercentage = matchPercentage
-                    appleAlbumId = albumData.id
-                }
+                } else if (bestMatchId && bestMatchComparisonResult){
+                    if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                        bestMatchId = albumData.id
+                        bestMatchComparisonResult = comparisonResult
+                    }
+
+                } else if (comparisonValue >= 25) {
+                    bestMatchId = albumData.id
+                    bestMatchComparisonResult = comparisonResult
+                } 
+
             }
-            if (appleAlbumId) {
-                getAppleAlbum(appleAlbumId)
+            if (bestMatchId != undefined) {
+                getAppleAlbum(bestMatchId)
                 .then((appleAlbum:AppleAlbum) =>{
                     resolve(appleAlbum)
                 })
                 .catch((error:Error) =>{
                     reject(error)
                 })
+            } else{
+                reject("ALBUM NOT FOUND")
             }
-            else {
-                reject ("ALBUM NOT FOUND")
-            }
+
+
+            // resolve(data)
+            // let parsedResponse = <Apple.AlbumSearchResponse> data
+
+            // var appleAlbumId:any = undefined
+            // // var highestPercentage = 0.0
+
+            // // for (let albumData of parsedResponse.results.albums.data){
+                
+            // //     // let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
+            // //     // let matchResult = searchAlbum.compare(comparisonAlbum)
+            // //     // let matchValue = matchResult.value
+            // //     // let matchPercentage = matchResult.albumPercentage
+
+            // //     // if (matchValue == MatchValue.exactMatch){
+            // //     //     appleAlbumId = albumData.id
+            // //     //     break
+            // //     // } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
+            // //     //     highestPercentage = matchPercentage
+            // //     //     appleAlbumId = albumData.id
+            // //     // }
+            // // }
+            // if (appleAlbumId) {
+            //     getAppleAlbum(appleAlbumId)
+            //     .then((appleAlbum:AppleAlbum) =>{
+            //         resolve(appleAlbum)
+            //     })
+            //     .catch((error:Error) =>{
+            //         reject(error)
+            //     })
+            // }
+            // else {
+            //     reject ("ALBUM NOT FOUND")
+            // }
             
 
         })
@@ -425,61 +472,22 @@ export function getApplePlaylist (playlistId: string): any {
     })
 }
 
-function createQueryUri (songName: string, artist: string){
-    var songNameProcessed = sanitizeStringComplex(songName)
-    // if (songNameProcessed.replace(/(\(.*?\))/i, '').trim() != ''){
-    //     songNameProcessed = songNameProcessed.replace(/(\(.*?\))/i, '').trim()
-    // }
-    // songNameProcessed = songNameProcessed.replace(/[-:&!?()]/g, '')
-    // songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
-    // songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
-    // songNameProcessed = songNameProcessed.replace(/(?<=remastered) version/i, '')
-    // songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
-    // songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
-    // songNameProcessed = songNameProcessed.replace(/(\d+) mix/i, '')
-    // songNameProcessed = songNameProcessed.replace(/\s+/g,' ').trim()
-
+function createQueryUri (name: string, artist: string){
+    var nameProcessed = sanitizeStringComplex(name)
     var artistProcessed = sanitizeStringBasic(artist)
-    // artistProcessed = artistProcessed.replace(/\s+/g,' ').trim()
 
-    // console.log(artistProcessed)
-
-    // let nameString = ""
-    // if (songNameProcessed.length > 50){
-    //     let nameComponents = songNameProcessed.split(" ")
-        
-    //     for (let comp of nameComponents){
-    //         if (nameString.concat(' ', comp).length <= 50){
-    //             if (nameString != ""){
-    //                 nameString = nameString.concat(' ',comp)
-    //             } else {
-    //                 nameString = nameString.concat(comp)
-    //             }
-    //         } else {
-    //             break
-    //         }
-    //     }
-
-    // } else {
-    //     nameString = songNameProcessed
-    // }
-
-    // let queryString = nameString
-    // if(queryString.concat(' ', artistProcessed).length > 50){
-    //     let artistComponents = artistProcessed.split(" ")
-        
-    //     for (let comp of artistComponents){
-    //         console.log(comp)
-    //         if (queryString.concat(' ', comp).length <= 50){
-    //             queryString = queryString.concat(' ', comp)
-    //         } else {
-    //             break
-    //         }
-    //     }
-    // } else {
-    //     queryString = queryString.concat(' ' , artistProcessed)
-    // }
-    var queryString = songNameProcessed.concat(" ", artistProcessed)
+    var queryString = nameProcessed.concat(" ", artistProcessed)
     queryString = queryString.replace(/\s/g, '+')
     return queryString
 }
+
+// enum comparisonValues {lesserThan, equalTo, greaterThan}
+
+// function compareComparisonResults (result1: TrackComparisonResult, result2: TrackComparisonResult): comparisonValues {
+
+//     if (result1.nameResult == result2.nameResult && result1.artistResult == result2.artistResult && result1.albumResult == result2.albumResult){
+//         return comparisonValues.greaterThan
+//     }
+//     else if (result1)
+//     if result1.nameResult > result2.nameResult && result1.artistResult > 
+// }
