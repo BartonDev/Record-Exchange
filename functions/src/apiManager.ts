@@ -4,7 +4,6 @@ import {SpotifyToken} from "./SpotifyTokenManager"
 import {Track, AppleTrack, SpotifyTrack} from "./musicObjects"
 import {Album, SpotifyAlbum, AppleAlbum} from "./musicObjects"
 import {ApplePlaylist, SpotifyPlaylist} from "./musicObjects"
-// import {MatchValue} from "./musicObjects"
 import {sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
 
 import {APPLE_TOKEN} from "./credentials"
@@ -68,14 +67,9 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
 export function searchAppleTrack(searchTrack:Track): any {
     return new Promise (function(resolve, reject) {
 
-        //TODO: certain special characters trip up the query, needs to be refined
-
         let query = createQueryUri(searchTrack.name, searchTrack.artist)
-        // console.log("Q", query)
-        // var printerData = Array<any>()
 
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=songs`;
-        // console.log('URL', url)
         const options = {
             headers: {
                 Authorization: `Bearer ${APPLE_TOKEN}`
@@ -83,30 +77,18 @@ export function searchAppleTrack(searchTrack:Track): any {
         };
         fetch(url, options)
         .then( (res:any) => {
-            // console.log("rpe", res)
             return res.json()
         })
         .then( (data:any) => {
-            // console.log("day", data)
-
             let parsedResponse = <Apple.TrackSearchResponse> data
 
             var bestMatch :any = undefined
             var bestMatchComparisonResult: any = undefined
 
-            
-
             for (let trackData of parsedResponse.results.songs.data){
                 let comparisonTrack = new AppleTrack(trackData)
                 let comparisonResult = searchTrack.compare(comparisonTrack)
                 let comparisonValue = comparisonResult.value
-
-                // let dat = {
-                //     "search": JSON.stringify(searchTrack),
-                //     "comparison": JSON.stringify(comparisonTrack),
-                //     "result": JSON.stringify(comparisonResult)
-                // }
-                // printerData.push(dat)
 
                 if (comparisonValue == 52) {
                     bestMatch = comparisonTrack
@@ -124,7 +106,6 @@ export function searchAppleTrack(searchTrack:Track): any {
 
             }
             if (bestMatch != undefined) {
-                // console.log("COMPLETION DATA: ", printerData)
                 resolve(bestMatch)
             } else{
                 reject("TRACK NOT FOUND")
@@ -132,7 +113,6 @@ export function searchAppleTrack(searchTrack:Track): any {
 
         })
         .catch((error:Error) => {
-            console.log("error", error, url)
             reject(error)
         })
     })
@@ -154,8 +134,6 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
         .then( (data:any) => {
 
             let parsedResponse = <Spotify.AlbumSearchResponse>data
-            console.log(parsedResponse)
-            // var bestMatch :any = undefined
             var bestMatchComparisonResult: any = undefined
             var bestMatchId: any = undefined
 
@@ -177,7 +155,6 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
                     bestMatchId = albumPreviewData.id
                     bestMatchComparisonResult = comparisonResult
                 } 
-
             }
             if (bestMatchId != undefined) {
                 getSpotifyAlbum(bestMatchId, token)
@@ -185,46 +162,11 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
                     resolve(spotifyAlbum)
                 })
                 .catch((error:Error) =>{
-                    console.log("ERR", error)
                     reject(error)
                 })
             } else{
                 reject("ALBUM NOT FOUND")
             }
-
-            
-            // let parsedResponse = <Spotify.AlbumSearchResponse>data
-
-            // var spotifyAlbumId:any = undefined
-            // var highestPercentage = 0.0
-
-            // for (let albumPreviewData of parsedResponse.albums.items){
-            //     let comparisonAlbum = new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
-            //     let matchResult = searchAlbum.compare(comparisonAlbum)
-            //     let matchValue = matchResult.value
-            //     let matchPercentage = matchResult.albumPercentage
-            //     // console.log(albumPreviewData.name, "vs", comparisonAlbum.name, matchValue, matchPercentage)
-            //     if (matchValue == MatchValue.exactMatch){
-            //         spotifyAlbumId = albumPreviewData.id
-            //         break
-            //     } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
-            //         highestPercentage = matchPercentage
-            //         spotifyAlbumId = albumPreviewData.id
-            //     }
-            // }
-
-            // if (spotifyAlbumId){
-            //     getSpotifyAlbum(spotifyAlbumId, token)
-            //     .then((spotifyAlbum:SpotifyAlbum) =>{
-            //         resolve(spotifyAlbum)
-            //     })
-            //     .catch((error:Error) =>{
-            //         reject(error)
-            //     })
-            // }
-            // else {
-            //     reject("ALBUM NOT FOUND")
-            // }
         })
         .catch((error:Error) => {
             reject(error)
@@ -233,12 +175,7 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
 }
 
 export function searchAppleAlbum (searchAlbum:Album):any{
-    //https://api.music.apple.com/v1/catalog/us/search?term=james+brown&limit=2&types=artists,albums
     return new Promise (function(resolve, reject) {
-
-
-        //TODO: certain special characters trip up the query, needs to be refined
-        //(Possibly Fixed Now, needs testing)
         let query = createQueryUri(searchAlbum.name, searchAlbum.artist)
     
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=albums`;
@@ -252,10 +189,8 @@ export function searchAppleAlbum (searchAlbum:Album):any{
         .then( (res:any) => res.json())
         .then( (data:any) => {
 
-
             let parsedResponse = <Apple.AlbumSearchResponse> data
 
-            // var bestMatch :any = undefined
             var bestMatchComparisonResult: any = undefined
             var bestMatchId: any = undefined
 
@@ -290,43 +225,6 @@ export function searchAppleAlbum (searchAlbum:Album):any{
             } else{
                 reject("ALBUM NOT FOUND")
             }
-
-
-            // resolve(data)
-            // let parsedResponse = <Apple.AlbumSearchResponse> data
-
-            // var appleAlbumId:any = undefined
-            // // var highestPercentage = 0.0
-
-            // // for (let albumData of parsedResponse.results.albums.data){
-                
-            // //     // let comparisonAlbum = new Album(albumData.attributes.name, albumData.attributes.artistName)
-            // //     // let matchResult = searchAlbum.compare(comparisonAlbum)
-            // //     // let matchValue = matchResult.value
-            // //     // let matchPercentage = matchResult.albumPercentage
-
-            // //     // if (matchValue == MatchValue.exactMatch){
-            // //     //     appleAlbumId = albumData.id
-            // //     //     break
-            // //     // } else if (matchValue == MatchValue.match && matchPercentage > highestPercentage) {
-            // //     //     highestPercentage = matchPercentage
-            // //     //     appleAlbumId = albumData.id
-            // //     // }
-            // // }
-            // if (appleAlbumId) {
-            //     getAppleAlbum(appleAlbumId)
-            //     .then((appleAlbum:AppleAlbum) =>{
-            //         resolve(appleAlbum)
-            //     })
-            //     .catch((error:Error) =>{
-            //         reject(error)
-            //     })
-            // }
-            // else {
-            //     reject ("ALBUM NOT FOUND")
-            // }
-            
-
         })
         .catch((error:Error) => {
             reject(error)
@@ -403,7 +301,6 @@ export function getSpotifyAlbum (albumId: string, token: SpotifyToken): any {
 
 export function getAppleAlbum (albumId: string): any {
     return new Promise (function(resolve, reject) {
-        // console.log("id", albumId)
         const url = `https://api.music.apple.com/v1/catalog/us/albums/${albumId}`
         const options = {
             headers: {
@@ -415,9 +312,7 @@ export function getAppleAlbum (albumId: string): any {
         .then( (res:any) => res.json())
         .then( (data:any) => {
             let parsedData = <Apple.AlbumResponse> data
-            // console.log('parnisp', parsedData.data[0])
             let album = new AppleAlbum(parsedData.data[0])
-            // console.log('album', album)
             resolve(album)
         })
         .catch((error:Error) => {
@@ -480,14 +375,3 @@ function createQueryUri (name: string, artist: string){
     queryString = queryString.replace(/\s/g, '+')
     return queryString
 }
-
-// enum comparisonValues {lesserThan, equalTo, greaterThan}
-
-// function compareComparisonResults (result1: TrackComparisonResult, result2: TrackComparisonResult): comparisonValues {
-
-//     if (result1.nameResult == result2.nameResult && result1.artistResult == result2.artistResult && result1.albumResult == result2.albumResult){
-//         return comparisonValues.greaterThan
-//     }
-//     else if (result1)
-//     if result1.nameResult > result2.nameResult && result1.artistResult > 
-// }

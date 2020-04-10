@@ -23,11 +23,9 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
 
         fetchTrackFirestore(trackId, ServiceType.spotify)
         .then((universalTrack: FirestoreUniversalTrack) => {
-            console.log('found', universalTrack)
             resolve(universalTrack)
         })
         .catch(()=>{
-            console.log('notfound')
             const url = `https://api.spotify.com/v1/tracks/${trackId}`
             const options = {
                 headers: {
@@ -46,13 +44,11 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
                     let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
                     storeUniversalTrack(universalTrack)
                     .then(() =>{
-                        // universalTrack.id = docRef
                         resolve(universalTrack)
                     })
                     .catch((error:Error)=>{
                         console.log(error)
                     })
-                    // resolve(universalTrack)
                 }).catch((error:Error) =>{
                     console.log(error)
                     reject(error)
@@ -67,36 +63,11 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
 
 export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any {
     return new Promise(function(resolve, reject) {
-        // const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
-        // const options = {
-        //     headers: {
-        //         Authorization: `Bearer ${APPLE_TOKEN}`
-        //     }
-        // };
-
-        // fetch(url, options)
-        // .then( (res:any) => res.json())
-        // .then( (data:any) => {
-        //     let parsedResponse = <Apple.Tracks>data
-        //     let appleTrack = new AppleTrack(parsedResponse.data[0])
-        //     searchSpotifyTrack(appleTrack.baseTrack(), token)
-        //     .then((spotifyTrack:SpotifyTrack) =>{
-        //         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-        //         resolve(universalTrack)
-        //     }).catch((error:Error) =>{
-        //         reject(error)
-        //     })
-        // }).catch((error:Error) =>{
-        //     reject(error)
-        // } )
-        console.log("a")
         fetchTrackFirestore(trackId, ServiceType.apple)
         .then((universalTrack: FirestoreUniversalTrack) => {
-            console.log("b")
             resolve(universalTrack)
         })
         .catch(()=>{
-            console.log("c")
             const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
             const options = {
                 headers: {
@@ -107,7 +78,6 @@ export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any
             fetch (url, options)
             .then( (res:any) => res.json())
             .then( (data:any) => {
-                console.log("OKEUELEEUEKE")
                 let parsedResponse = <Apple.Tracks>data
                 let appleTrack = new AppleTrack(parsedResponse.data[0])
 
@@ -116,7 +86,6 @@ export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any
                     let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
                     storeUniversalTrack(universalTrack)
                     .then(() =>{
-                        // universalTrack.id = docRef
                         resolve(universalTrack)
                     })
                     .catch((error:Error)=>{
@@ -141,12 +110,14 @@ export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):a
 
         getSpotifyAlbum(albumId, token)
         .then((spotifyAlbum:SpotifyAlbum) =>{
-            console.log("ALBUM FOUND: ", spotifyAlbum)
             searchAppleAlbum(spotifyAlbum.baseAlbum())
             .then((appleAlbum:AppleAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
                 storeUniversalAlbum(universalAlbum)
                 resolve(universalAlbum)
+            })
+            .catch((error:any)=>{
+                console.log(error)
             })
         })
         .catch((error:Error)=>{
@@ -157,16 +128,17 @@ export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):a
 
 export function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any{
     return new Promise (function(resolve, reject) {
-        console.log('ok1')
         getAppleAlbum(albumId)
         .then((appleAlbum:AppleAlbum)=>{
-            console.log('ok2')
             searchSpotifyAlbum(appleAlbum.baseAlbum(), token)
             .then((spotifyAlbum: SpotifyAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
                 storeUniversalAlbum(universalAlbum)
                 resolve(universalAlbum)
                 
+            })
+            .catch((error:any)=>{
+                console.log(error)
             })
         })
         .catch((error:Error)=>{
@@ -183,7 +155,6 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
             let goalPromises = playlist.tracks.length
             var universalTracks = new Array<UniversalTrack>()
             for (const [index, spotifyTrack] of playlist.tracks.entries()){
-                // console.log(index, spotifyTrack.name)
                 setTimeout(function(){
                     searchAppleTrack(spotifyTrack.baseTrack())
                     .then((appleTrack:AppleTrack) => {
@@ -194,7 +165,6 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
                             console.log(error)
                         })
 
-                        //TODO fix sorting
                         if (universalTracks.length > index){
                             universalTracks.splice(index, 0, universalTrack)
                         } else {
@@ -208,7 +178,6 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
 
                     })
                     .catch( (error:Error) => {
-                        // console.log("NOT FOUND", error)
                         fullfilledPromises += 1
                         if (fullfilledPromises == goalPromises){
                             let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
@@ -216,52 +185,6 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
                         }
                     })
                 }, (100 * index));
-
-                // fetchTrackFirestore(spotifyTrack.id, ServiceType.spotify)
-                // .then((universalTrack: FirestoreUniversalTrack) => {
-                //     //TODO: Fix sorting
-                //     if (universalTracks.length > index){
-                //         universalTracks.splice(index, 0, universalTrack)
-                //     } else {
-                //         universalTracks.push(universalTrack)
-                //     }
-                //     fullfilledPromises += 1
-                //     if (fullfilledPromises == goalPromises){
-                //         let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                //         resolve(universalPlaylist)  
-                //     }
-                // })
-                // .catch(() => {
-                //     searchAppleTrack(spotifyTrack.baseTrack())
-                //     .then((appleTrack:AppleTrack) => {
-                //         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                //         storeUniversalTrack(universalTrack)
-                //         .then((docRef: string) =>{
-                //             //TODO: Fix sorting
-                //             universalTrack.id = docRef
-                //             if (universalTracks.length > index){
-                //                 universalTracks.splice(index, 0, universalTrack)
-                //             } else {
-                //                 universalTracks.push(universalTrack)
-                //             }
-                //             fullfilledPromises += 1
-                //             if (fullfilledPromises == goalPromises){
-                //                 let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                //                 resolve(universalPlaylist)
-                //             }
-                //         })
-                //         .catch((error:Error) =>{
-                //             console.log(error)
-                //         })
-                //     })
-                //     .catch( (error:Error) => {
-                //         fullfilledPromises += 1
-                //         if (fullfilledPromises == goalPromises){
-                //             let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                //             resolve(universalPlaylist)
-                //         }
-                //     })
-                // })
             }
         })
         .catch((error:Error) =>{

@@ -32,7 +32,6 @@ export const getPreview = functions.https.onRequest((req, res)=> {
         let objectType = req.body.objectType
         let id = req.body.id 
 
-        console.log(serviceType, objectType, id)
         if (serviceType == ServiceType.spotify) {
             getSpotifyToken()
             .then((spotifyToken:SpotifyToken) =>{
@@ -109,27 +108,23 @@ export const convertObject = functions.https.onRequest((req, res) => {
         let objectType = req.body.objectType
         let id = req.body.id 
 
-        console.log(serviceType, objectType)
-
         getSpotifyToken()
         .then((spotifyToken:SpotifyToken) =>{
             if (serviceType == ServiceType.spotify) {
                 if (objectType == ObjectType.playlist){
                     spotifyPlaylistToUniversal(id, spotifyToken)
                     .then((universalPlaylist:UniversalPlaylist) =>{
-                        // console.log("sofarsogood.jpeg")
                         storeUniversalPlaylist(universalPlaylist)
                         .then( (docId:any) => {
                             universalPlaylist.id = docId
                             res.status(200).send(universalPlaylist)
                         })
                         .catch((error:Error) =>{
-                            // console.log(error)
                             res.status(400).send(error)
                         })
                     })
                     .catch((error:Error) =>{
-                        console.log("500ERROR", error)
+                        console.log(error)
                         res.status(500).send(error)
                     })
                 } else if (objectType == ObjectType.album){
@@ -142,10 +137,8 @@ export const convertObject = functions.https.onRequest((req, res) => {
                         res.status(400).send(error)
                     })
                 } else if (objectType == ObjectType.track){
-                    console.log('start')
                     spotifyTrackToUniversal(id, spotifyToken)
                     .then((universalTrack:UniversalTrack)=>{
-                        console.log('ok', universalTrack)
                         res.status(200).send(universalTrack)
                     })
                     .catch((error:Error)=>{
@@ -182,10 +175,8 @@ export const convertObject = functions.https.onRequest((req, res) => {
                         res.status(400).send(error)
                     })
                 } else if (objectType == ObjectType.track){
-                    console.log("WHAT")
                     appleTrackToUniversal(id, spotifyToken)
                     .then((universalTrack:UniversalTrack)=>{
-                        console.log('ok', universalTrack)
                         res.status(200).send(universalTrack)
                     })
                     .catch((error:Error)=>{
@@ -274,11 +265,7 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         const url = 'https://api.music.apple.com/v1/me/library/playlists'
         let userToken = req.body.userToken
-        // console.log()
-        console.log(userToken)
-        console.log(APPLE_TOKEN)
         let playlistData = req.body.playlistData
-        console.log(playlistData)
         var trackDataArray  = Array<any>()
         for (let track of playlistData.tracks){
             let trackData = {
@@ -287,7 +274,6 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
             }
             trackDataArray.push(trackData)
         }
-        console.log(trackDataArray)
         let data = {
             "attributes":{
                "name":playlistData.name,
@@ -299,7 +285,6 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
                }
             }
         }
-        console.log("da", data)
 
         const options = {
             method: 'POST',
@@ -312,167 +297,13 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
         };
     
         fetch(url, options)
-        .then( (res:any) => console.log(res))
-        // .then( (data:any) => {
-        //     console.log("return", data)
-        // })
+        .then( (res:any) => res.JSON())
+        .then( (data:any) => {
+            console.log("return", data)
+        })
         .catch((error:Error) => {
             console.log("error", error)
         })
 
     })
 })
-
-export const test1345 = functions.https.onRequest((req, res) =>{
-    let songName = "(Blue He!n Geology? Version)"
-    let artist = "Me  YOU"
-
-
-    var songNameProcessed = songName
-    if (songNameProcessed.replace(/(\(.*?\))/i, '').trim() != ''){
-        songNameProcessed = songNameProcessed.replace(/(\(.*?\))/i, '').trim()
-    }
-    songNameProcessed = songNameProcessed.replace(/[-:&!?()]/g, '')
-    songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
-    songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
-    songNameProcessed = songNameProcessed.replace(/(?<=remastered) version/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) mix/i, '')
-    songNameProcessed = songNameProcessed.replace(/\s+/g,' ').trim()
-
-    var artistProcessed = artist.replace(/[-:&()]/g, '')
-    artistProcessed = artistProcessed.replace(/\s+/g,' ').trim()
-
-    console.log(artistProcessed)
-
-    let nameString = ""
-    if (songNameProcessed.length > 40){
-        let nameComponents = songNameProcessed.split(" ")
-        
-        for (let comp of nameComponents){
-            if (nameString.concat(' ', comp).length <= 40){
-                if (nameString != ""){
-                    nameString = nameString.concat(' ',comp)
-                } else {
-                    nameString = nameString.concat(comp)
-                }
-            } else {
-                break
-            }
-        }
-
-    } else {
-        nameString = songNameProcessed
-    }
-
-    let queryString = nameString
-    if(queryString.concat(' ', artistProcessed).length > 40){
-        let artistComponents = artistProcessed.split(" ")
-        
-        for (let comp of artistComponents){
-            console.log(comp)
-            if (queryString.concat(' ', comp).length <= 40){
-                queryString = queryString.concat(' ', comp)
-            } else {
-                break
-            }
-        }
-    } else {
-        queryString = queryString.concat(' ' , artistProcessed)
-    }
-
-    queryString = queryString.replace(/\s/g, '+')
-    res.send( queryString)
-})
-
-export const test5463 = functions.https.onRequest((req, res) =>{
-    // let query = 
-    // let queryName = searchTrack.name.replace(" ", "%20")
-    // let queryArtist = searchTrack.artist.replace(" ", "%20")
-    let a = 'The Ballad of Peter 205 Remaster Potoato aas'
-    let b = createQueryUri(a, "XTC")
-    res.send(b)
-    // let query = a.split(' ').join('+')
-    // console.log(query)
-    // let enc =  encodeURI(query)
-    // // console.log(enc)
-    // const url = `https://api.music.apple.com/v1/catalog/us/search?term=${enc}&limit=5&types=songs`;
-    // console.log('URL', url)
-    // const options = {
-    //     headers: {
-    //         limit: 5,
-    //         types: "songs",
-    //         search_term: "your graduation",
-    //         Authorization: `Bearer ${APPLE_TOKEN}`
-    //     }
-    // };
-    // fetch(url, options)
-    // .then( (res:any) => {
-    //     return res.json()
-    // })
-    // .then( (data:any) => {
-    //     res.send(data)
-    // })
-    // .catch((error:Error)=>{
-    //     res.send(error)
-    // })
-})
-
-
-function createQueryUri (songName: string, artist: string){
-    var songNameProcessed = songName.replace(/[-:&()]/g, '')
-    songNameProcessed = songNameProcessed.replace(/remastered\ (\d+)/i, '')
-    songNameProcessed = songNameProcessed.replace(/remaster\ (\d+)/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) remastered/i, '')
-    songNameProcessed = songNameProcessed.replace(/(\d+) remaster/i, '')
-
-    var artistProcessed = artist.replace(/[-:&()]/g, '')
-    artistProcessed = artistProcessed.replace(/remastered\ (\d+)/i, '')
-    artistProcessed = artistProcessed.replace(/remaster\ (\d+)/i, '')
-    artistProcessed = artistProcessed.replace(/(\d+) remastered/i, '')
-    artistProcessed = artistProcessed.replace(/(\d+) remaster/i, '')
-
-    console.log(artistProcessed)
-
-    let nameString = ""
-    if (songNameProcessed.length > 30){
-        let nameComponents = songNameProcessed.split(" ")
-        
-        for (let comp of nameComponents){
-            if (nameString.concat(comp).length <= 29){
-                if (nameString != ""){
-                    nameString = nameString.concat(' ',comp)
-                } else {
-                    nameString = nameString.concat(comp)
-                }
-            } else {
-                break
-            }
-        }
-
-    } else {
-        nameString = songNameProcessed
-    }
-
-    let queryString = nameString
-    if(queryString.concat(artistProcessed).length > 30){
-        let artistComponents = artistProcessed.split(" ")
-        
-        for (let comp of artistComponents){
-            console.log(comp)
-            if (queryString.concat(comp).length <= 29){
-                queryString = queryString.concat(' ', comp)
-            } else {
-                break
-            }
-        }
-    } else {
-        console.log("coolio")
-        queryString = queryString.concat(artistProcessed)
-    }
-
-    queryString = queryString.replace(/\s/g, '+')
-    return queryString
-}
-

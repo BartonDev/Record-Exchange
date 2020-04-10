@@ -303,26 +303,9 @@ export class Album {
         this.artist = artist
     }
 
-    //TODO: improve album comparison, possibly involving track count or release date
-    // compare (comparisonAlbum: Album): MatchResult {
-    //     if (this.artist.toLowerCase() == comparisonAlbum.artist.toLowerCase()) {
-    //         if (this.name.toLowerCase() == comparisonAlbum.name.toLowerCase()){
-    //             return new MatchResult(MatchValue.exactMatch, 100)
-    //         }
-    //         else {
-    //             let matchPercentage = compareStrings(this.name, comparisonAlbum.name)
-    //             return new MatchResult(MatchValue.match, matchPercentage)
-    //         }
-    //     }
-    //     return new MatchResult(MatchValue.nonMatch, 0)
-    // }
-    // compare (comparisonAlbum: Album):any {}
-
     compare (comparisonAlbum: Album): ComparisonResult {
-
         let nameResult = MatchValue.different
         let artistResult = MatchValue.different
-        // let albumResult = MatchValue.different
 
         var name1 = sanitizeStringBasic(this.name)
         var name2 = sanitizeStringBasic(comparisonAlbum.name)
@@ -365,8 +348,6 @@ export class Album {
 export class SpotifyAlbum extends Album{
     id: string
     coverImage: string
-    // name: string
-    // artist: string
     genres: Array<any>
     tracks: Array<SpotifyTrack>
 
@@ -379,7 +360,6 @@ export class SpotifyAlbum extends Album{
         let artist = artists[0]
         super(name, artist)
 
-        // this.artist = artists[0]
         this.id = data.id
         this.coverImage = data.images[0].url
         this.genres = data.genres
@@ -396,8 +376,6 @@ export class SpotifyAlbum extends Album{
 export class AppleAlbum extends Album{
     id: string
     coverImage: string
-    // name: string
-    // artist: string
     genres: Array<string>
     tracks: Array<AppleTrack>
 
@@ -423,9 +401,7 @@ export class UniversalAlbum extends Album {
     id: string
     spotifyId: string
     appleId: string
-    // name: string
     coverImage: string
-    // artist: string
     genres: Array<string>
     tracks: Array<UniversalTrack>
 
@@ -492,9 +468,7 @@ export class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
     id: string
     spotifyId: string
     appleId: string
-    // name: string
     coverImage: string
-    // artist: string
     genres: Array<string>
     tracks: Array<UniversalTrack>
 
@@ -510,22 +484,8 @@ export class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
 
         this.id = firestoreId
 
-        //TODO: probably a cleaner way to do this
-        // let tracksData = data.tracks
-        // for (let trackData of data.tracks){
-
-        // }
-        // let appleTracks = appleAlbum.tracks
+        //TODO: Implement
         let universalTracks = Array<UniversalTrack>()
-        // for (let spotifyTrack of spotifyTracks){
-        //     for (let appleTrack of appleTracks){
-        //         if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
-        //             let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-        //             universalTracks.push(universalTrack)
-        //             break
-        //         }
-        //     }
-        // }
         this.tracks = universalTracks
     }
 

@@ -1,5 +1,3 @@
-
-
 export function sanitizeStringBasic (string: string): string {
     var processedString = string
     processedString = processedString.replace(/[-:&!?()]/g, '')
@@ -27,14 +25,12 @@ export function sanitizeStringComplex (string: string): string {
     processedString = processedString.toLowerCase()
 
     return processedString
-    
 }
 
 export function compareStrings (string1: string, string2: string): number{
-    
     let array1 = string1.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
     let array2 = string2.toLowerCase().split(/[^A-Za-z0-9]/).filter(function (element:string) {return element != '';});;
-    // console.log(array1, array2)
+
     if (array1.length >= array2.length){
         let totalWords = array1.length
         var matchedWords = 0

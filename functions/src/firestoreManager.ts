@@ -124,13 +124,11 @@ export function storeUniversalPlaylist (playlist: UniversalPlaylist): any {
     } 
 
     return new Promise (function (resolve, reject) {
-        // console.log("dataToLOg", playlist.toFirestoreData())
         admin.firestore().collection("playlists").add(playlist.toFirestoreData())
         .then(function(docRef) {
             resolve(docRef.id)
         })
         .catch(function(error) {
-            // console.log("err", error)
             reject(error)
         });
     })
@@ -212,7 +210,6 @@ export function fetchAlbumFirestore(id: string, serviceType?:ServiceType):any{
 
 export function fetchTrackFirestore(id: string, serviceType?:ServiceType):any{
     return new Promise (function(resolve, reject) {
-        console.log("okeyeye")
         if (!admin.apps.length) {
             admin.initializeApp();
         } 
