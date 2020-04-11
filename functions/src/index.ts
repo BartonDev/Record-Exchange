@@ -16,8 +16,10 @@ import {spotifyTrackToUniversal, spotifyAlbumToUniversal, spotifyPlaylistToUnive
 import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} from "./convertMusic"
 
 import {addPlaylistToLibrarySpotify} from "./libraryManager"
-// import { user } from 'firebase-functions/lib/providers/auth';
 import { APPLE_TOKEN } from './credentials';
+// import { app } from 'firebase-admin';
+// import { user } from 'firebase-functions/lib/providers/auth';
+
 
 const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
@@ -26,11 +28,101 @@ const cors = require('cors')({origin:true});
 
 //Misc Functions
 
-export const getPreview = functions.https.onRequest((req, res)=> {
+export const getPreview_HTTPS = functions.https.onRequest((req, res)=> {
     return cors(req, res, () => {
-        let serviceType = req.body.serviceType
-        let objectType = req.body.objectType
-        let id = req.body.id 
+        
+        let serviceType = req.body.data.serviceType
+        let objectType = req.body.data.objectType
+        let id = req.body.data.id 
+        getPreview(serviceType, objectType, id)
+        .then((object:any)=>{
+            res.status(200).send(object)
+        })
+        .catch((error:Error)=>{
+            res.status(400).send(error)
+        })
+
+        // console.log(req.body)
+        // console.log(serviceType, objectType, id)
+
+        // if (serviceType == ServiceType.spotify) {
+        //     getSpotifyToken()
+        //     .then((spotifyToken:SpotifyToken) =>{
+        //         if (objectType == ObjectType.playlist){
+        //             getSpotifyPlaylist(id, spotifyToken)
+        //             .then((spotifyPlaylist:SpotifyPlaylist) =>{
+        //                 res.status(200).send(spotifyPlaylist)
+        //             })
+        //             .catch((error:Error) =>{
+        //                 res.status(400).send(error)
+        //             })
+        //         } else if (objectType == ObjectType.album){
+        //             getSpotifyAlbum(id, spotifyToken)
+        //             .then((spotifyAlbum:SpotifyAlbum)=>{
+        //                 res.status(200).send(spotifyAlbum)
+        //             })
+        //             .catch((error:Error) =>{
+        //                 console.log(error)
+        //                 res.status(400).send(error)
+        //             })
+        //         } else if (objectType == ObjectType.track){
+        //             getSpotifyTrack(id, spotifyToken)
+        //             .then((spotifyTrack:SpotifyTrack)=>{
+        //                 res.status(200).send(spotifyTrack)
+        //             })
+        //             .catch((error:Error) =>{
+        //                 res.status(400).send(error)
+        //             })
+        //         } else {
+        //             res.status(400).send('Bad Info')
+        //         }
+        //     })
+        //     .catch((error:Error) =>{
+        //         res.status(400).send(error)
+        //     })
+            
+        // } else if (serviceType == ServiceType.apple) {
+        //     if (objectType == ObjectType.playlist){
+        //         getApplePlaylist(id)
+        //         .then((applePlaylist:ApplePlaylist) => {
+        //             res.status(200).send(applePlaylist)
+        //         })
+        //         .catch((error:Error) =>{
+        //             console.log(error)
+        //             res.status(400).send(error)
+        //         })
+        //     } else if (objectType == ObjectType.album){
+        //         getAppleAlbum(id)
+        //         .then((appleAlbum:AppleAlbum) => {
+        //             res.status(200).send(appleAlbum)
+        //         })
+        //         .catch((error:Error) =>{
+        //             console.log(error)
+        //             res.status(400).send(error)
+        //         })
+        //     } else if (objectType == ObjectType.track){
+        //         getAppleTrack(id)
+        //         .then((appleTrack:AppleTrack) => {
+        //             res.status(200).send(appleTrack)
+        //         })
+        //         .catch((error:Error) =>{
+        //             res.status(400).send(error)
+        //         })
+        //     } else {
+        //         res.status(400).send('BAD INFO')
+        //     }
+        // }
+    })  
+});
+
+function getPreview (serviceType: string, objectType: string, id: string):any{
+    return new Promise (function (resolve, reject) {
+        // let serviceType = req.body.data.serviceType
+        // let objectType = req.body.data.objectType
+        // let id = req.body.data.id 
+
+        // console.log(req.body)
+        // console.log(serviceType, objectType, id)
 
         if (serviceType == ServiceType.spotify) {
             getSpotifyToken()
@@ -38,69 +130,84 @@ export const getPreview = functions.https.onRequest((req, res)=> {
                 if (objectType == ObjectType.playlist){
                     getSpotifyPlaylist(id, spotifyToken)
                     .then((spotifyPlaylist:SpotifyPlaylist) =>{
-                        res.status(200).send(spotifyPlaylist)
+                        resolve(spotifyPlaylist)
+                        // res.status(200).send(spotifyPlaylist)
                     })
                     .catch((error:Error) =>{
-                        res.status(400).send(error)
+                        reject(error)
+                        // res.status(400).send(error)
                     })
                 } else if (objectType == ObjectType.album){
                     getSpotifyAlbum(id, spotifyToken)
                     .then((spotifyAlbum:SpotifyAlbum)=>{
-                        res.status(200).send(spotifyAlbum)
+                        resolve(spotifyAlbum)
+                        // res.status(200).send(spotifyAlbum)
                     })
                     .catch((error:Error) =>{
-                        console.log(error)
-                        res.status(400).send(error)
+                        // console.log(error)
+                        reject(error)
+                        // res.status(400).send(error)
                     })
                 } else if (objectType == ObjectType.track){
                     getSpotifyTrack(id, spotifyToken)
                     .then((spotifyTrack:SpotifyTrack)=>{
-                        res.status(200).send(spotifyTrack)
+                        resolve(spotifyTrack)
+                        // res.status(200).send(spotifyTrack)
                     })
                     .catch((error:Error) =>{
-                        res.status(400).send(error)
+                        reject(error)
+                        // res.status(400).send(error)
                     })
                 } else {
-                    res.status(400).send('Bad Info')
+                    reject()
+                    // res.status(400).send('Bad Info')
                 }
             })
             .catch((error:Error) =>{
-                res.status(400).send(error)
+                reject(error)
+                // res.status(400).send(error)
             })
             
         } else if (serviceType == ServiceType.apple) {
             if (objectType == ObjectType.playlist){
                 getApplePlaylist(id)
                 .then((applePlaylist:ApplePlaylist) => {
-                    res.status(200).send(applePlaylist)
+                    resolve(applePlaylist)
+                    // res.status(200).send(applePlaylist)
                 })
                 .catch((error:Error) =>{
-                    console.log(error)
-                    res.status(400).send(error)
+                    // console.log(error)
+                    reject(error)
+                    // res.status(400).send(error)
                 })
             } else if (objectType == ObjectType.album){
                 getAppleAlbum(id)
                 .then((appleAlbum:AppleAlbum) => {
-                    res.status(200).send(appleAlbum)
+                    resolve(appleAlbum)
+                    // res.status(200).send(appleAlbum)
                 })
                 .catch((error:Error) =>{
-                    console.log(error)
-                    res.status(400).send(error)
+                    reject(error)
+                    // console.log(error)
+                    // res.status(400).send(error)
                 })
             } else if (objectType == ObjectType.track){
                 getAppleTrack(id)
                 .then((appleTrack:AppleTrack) => {
-                    res.status(200).send(appleTrack)
+                    resolve(appleTrack)
+                    // res.status(200).send(appleTrack)
                 })
                 .catch((error:Error) =>{
-                    res.status(400).send(error)
+                    reject(error)
+                    // res.status(400).send(error)
                 })
             } else {
-                res.status(400).send('BAD INFO')
+                reject()
+                // res.status(400).send('BAD INFO')
             }
         }
-    })  
-});
+    })
+}
 
 export const convertObject = functions.https.onRequest((req, res) => {
     return cors(req, res, () => {
@@ -243,7 +350,7 @@ export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
     })
 })
 
-//Something is wrong here with cors, come back to it
+//TODO: Something is wrong here with cors, come back to it
 export const test = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         let authCode = req.body.authorizationCode
@@ -307,3 +414,25 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
 
     })
 })
+
+exports.getPreview = functions.https.onCall((data, context) => {
+    let serviceType = data.serviceType
+    let objectType = data.objectType
+    let id = data.id 
+    return new Promise(function(resolve, reject){
+        getPreview(serviceType, objectType, id)
+        .then((object:any)=>{
+            resolve (JSON.stringify(object))
+        })
+        .catch((error:Error)=>{
+            reject(error)
+        })
+    })
+    // .then()
+    // return {
+    //     firstNumber: 1,
+    //     secondNumber: 2,
+    //     operator: '+',
+    //     operationResult: 3 + 5,
+    //   };
+});
