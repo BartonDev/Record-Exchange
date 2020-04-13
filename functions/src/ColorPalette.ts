@@ -1,7 +1,7 @@
 import Vibrant = require('node-vibrant')
 const request = require('request').defaults({encoding:null});
 
-export class ColorPalete {
+export class ColorPalette {
     vibrant: string
     lightVibrant: string
     darkVibrant: string
@@ -115,7 +115,7 @@ export function getPaletteFromUrl (url: string): any{
             vibrantRequest.getPalette()
             .then((palette:any) => {
                 let vibrant = <Vibrant.VibrantResponse>palette
-                let colorPalette = new ColorPalete(vibrant)
+                let colorPalette = new ColorPalette(vibrant)
                 resolve(colorPalette)
             })
             .catch((error:Error) =>{
@@ -134,7 +134,7 @@ function rgbToHex (colors:Array<number>): string{
 }
 
 function numberToHex (num:number): string{
-    var hex = Number(num).toString(16);
+    var hex = Number(Math.floor(num)).toString(16);
     if (hex.length < 2) {
         hex = "0" + hex;
     }

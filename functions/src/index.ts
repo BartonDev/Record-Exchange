@@ -3,17 +3,21 @@ import * as functions from 'firebase-functions';
 import {SpotifyToken, getSpotifyToken, getSpotifyAuthCodeUrl} from "./SpotifyTokenManager"
 import {ServiceType, ObjectType} from "./musicEnums"
 
-import {AppleTrack, SpotifyTrack, UniversalTrack} from "./musicObjects"
-import {SpotifyAlbum, AppleAlbum, UniversalAlbum} from "./musicObjects"
-import {ApplePlaylist, SpotifyPlaylist, UniversalPlaylist, JsonUniversalPlaylist} from "./musicObjects"
+import {UniversalTrack} from "./musicObjects"
+import {UniversalAlbum} from "./musicObjects"
+import {UniversalPlaylist, JsonUniversalPlaylist} from "./musicObjects"
 
 import {fetchPlaylistFirestore, fetchAlbumFirestore, fetchTrackFirestore} from "./firestoreManager"
 import {storeUniversalPlaylist} from "./firestoreManager"
 
-import {getSpotifyTrack, getAppleTrack, getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
+// import {getSpotifyTrack, getAppleTrack, getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
 
 import {spotifyTrackToUniversal, spotifyAlbumToUniversal, spotifyPlaylistToUniversal} from "./convertMusic"
 import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} from "./convertMusic"
+
+import {getPreview} from "./getPreview"
+
+import { ColorPalette, getPaletteFromUrl } from "./colorPalette"
 
 import {addPlaylistToLibrarySpotify} from "./libraryManager"
 import { APPLE_TOKEN } from './credentials';
@@ -41,173 +45,8 @@ export const getPreview_HTTPS = functions.https.onRequest((req, res)=> {
         .catch((error:Error)=>{
             res.status(400).send(error)
         })
-
-        // console.log(req.body)
-        // console.log(serviceType, objectType, id)
-
-        // if (serviceType == ServiceType.spotify) {
-        //     getSpotifyToken()
-        //     .then((spotifyToken:SpotifyToken) =>{
-        //         if (objectType == ObjectType.playlist){
-        //             getSpotifyPlaylist(id, spotifyToken)
-        //             .then((spotifyPlaylist:SpotifyPlaylist) =>{
-        //                 res.status(200).send(spotifyPlaylist)
-        //             })
-        //             .catch((error:Error) =>{
-        //                 res.status(400).send(error)
-        //             })
-        //         } else if (objectType == ObjectType.album){
-        //             getSpotifyAlbum(id, spotifyToken)
-        //             .then((spotifyAlbum:SpotifyAlbum)=>{
-        //                 res.status(200).send(spotifyAlbum)
-        //             })
-        //             .catch((error:Error) =>{
-        //                 console.log(error)
-        //                 res.status(400).send(error)
-        //             })
-        //         } else if (objectType == ObjectType.track){
-        //             getSpotifyTrack(id, spotifyToken)
-        //             .then((spotifyTrack:SpotifyTrack)=>{
-        //                 res.status(200).send(spotifyTrack)
-        //             })
-        //             .catch((error:Error) =>{
-        //                 res.status(400).send(error)
-        //             })
-        //         } else {
-        //             res.status(400).send('Bad Info')
-        //         }
-        //     })
-        //     .catch((error:Error) =>{
-        //         res.status(400).send(error)
-        //     })
-            
-        // } else if (serviceType == ServiceType.apple) {
-        //     if (objectType == ObjectType.playlist){
-        //         getApplePlaylist(id)
-        //         .then((applePlaylist:ApplePlaylist) => {
-        //             res.status(200).send(applePlaylist)
-        //         })
-        //         .catch((error:Error) =>{
-        //             console.log(error)
-        //             res.status(400).send(error)
-        //         })
-        //     } else if (objectType == ObjectType.album){
-        //         getAppleAlbum(id)
-        //         .then((appleAlbum:AppleAlbum) => {
-        //             res.status(200).send(appleAlbum)
-        //         })
-        //         .catch((error:Error) =>{
-        //             console.log(error)
-        //             res.status(400).send(error)
-        //         })
-        //     } else if (objectType == ObjectType.track){
-        //         getAppleTrack(id)
-        //         .then((appleTrack:AppleTrack) => {
-        //             res.status(200).send(appleTrack)
-        //         })
-        //         .catch((error:Error) =>{
-        //             res.status(400).send(error)
-        //         })
-        //     } else {
-        //         res.status(400).send('BAD INFO')
-        //     }
-        // }
     })  
 });
-
-function getPreview (serviceType: string, objectType: string, id: string):any{
-    return new Promise (function (resolve, reject) {
-        // let serviceType = req.body.data.serviceType
-        // let objectType = req.body.data.objectType
-        // let id = req.body.data.id 
-
-        // console.log(req.body)
-        // console.log(serviceType, objectType, id)
-
-        if (serviceType == ServiceType.spotify) {
-            getSpotifyToken()
-            .then((spotifyToken:SpotifyToken) =>{
-                if (objectType == ObjectType.playlist){
-                    getSpotifyPlaylist(id, spotifyToken)
-                    .then((spotifyPlaylist:SpotifyPlaylist) =>{
-                        resolve(spotifyPlaylist)
-                        // res.status(200).send(spotifyPlaylist)
-                    })
-                    .catch((error:Error) =>{
-                        reject(error)
-                        // res.status(400).send(error)
-                    })
-                } else if (objectType == ObjectType.album){
-                    getSpotifyAlbum(id, spotifyToken)
-                    .then((spotifyAlbum:SpotifyAlbum)=>{
-                        resolve(spotifyAlbum)
-                        // res.status(200).send(spotifyAlbum)
-                    })
-                    .catch((error:Error) =>{
-                        // console.log(error)
-                        reject(error)
-                        // res.status(400).send(error)
-                    })
-                } else if (objectType == ObjectType.track){
-                    getSpotifyTrack(id, spotifyToken)
-                    .then((spotifyTrack:SpotifyTrack)=>{
-                        resolve(spotifyTrack)
-                        // res.status(200).send(spotifyTrack)
-                    })
-                    .catch((error:Error) =>{
-                        reject(error)
-                        // res.status(400).send(error)
-                    })
-                } else {
-                    reject()
-                    // res.status(400).send('Bad Info')
-                }
-            })
-            .catch((error:Error) =>{
-                reject(error)
-                // res.status(400).send(error)
-            })
-            
-        } else if (serviceType == ServiceType.apple) {
-            if (objectType == ObjectType.playlist){
-                getApplePlaylist(id)
-                .then((applePlaylist:ApplePlaylist) => {
-                    resolve(applePlaylist)
-                    // res.status(200).send(applePlaylist)
-                })
-                .catch((error:Error) =>{
-                    // console.log(error)
-                    reject(error)
-                    // res.status(400).send(error)
-                })
-            } else if (objectType == ObjectType.album){
-                getAppleAlbum(id)
-                .then((appleAlbum:AppleAlbum) => {
-                    resolve(appleAlbum)
-                    // res.status(200).send(appleAlbum)
-                })
-                .catch((error:Error) =>{
-                    reject(error)
-                    // console.log(error)
-                    // res.status(400).send(error)
-                })
-            } else if (objectType == ObjectType.track){
-                getAppleTrack(id)
-                .then((appleTrack:AppleTrack) => {
-                    resolve(appleTrack)
-                    // res.status(200).send(appleTrack)
-                })
-                .catch((error:Error) =>{
-                    reject(error)
-                    // res.status(400).send(error)
-                })
-            } else {
-                reject()
-                // res.status(400).send('BAD INFO')
-            }
-        }
-    })
-}
 
 export const convertObject = functions.https.onRequest((req, res) => {
     return cors(req, res, () => {
@@ -422,7 +261,16 @@ exports.getPreview = functions.https.onCall((data, context) => {
     return new Promise(function(resolve, reject){
         getPreview(serviceType, objectType, id)
         .then((object:any)=>{
-            resolve(JSON.stringify(object))
+            let coverImageUrl = object["coverImage"]
+            getPaletteFromUrl(coverImageUrl)
+            .then((palette: ColorPalette)=>{
+                object["palette"] = palette
+                resolve(JSON.stringify(object))
+            })
+            .catch((error:Error)=>{
+                console.log(error)
+                reject(error)
+            })
         })
         .catch((error:Error)=>{
             reject(error)
