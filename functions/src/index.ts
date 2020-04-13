@@ -422,17 +422,10 @@ exports.getPreview = functions.https.onCall((data, context) => {
     return new Promise(function(resolve, reject){
         getPreview(serviceType, objectType, id)
         .then((object:any)=>{
-            resolve (JSON.stringify(object))
+            resolve(JSON.stringify(object))
         })
         .catch((error:Error)=>{
             reject(error)
         })
     })
-    // .then()
-    // return {
-    //     firstNumber: 1,
-    //     secondNumber: 2,
-    //     operator: '+',
-    //     operationResult: 3 + 5,
-    //   };
 });
