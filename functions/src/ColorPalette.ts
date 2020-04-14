@@ -41,6 +41,7 @@ export class ColorPalette {
 
         //Incase of tied Population, perform checks in reverse priority order
 
+        
         //Dark Muted
         if (darkMutedPopulation >= topColor) {
             this.secondaryColor = this.primaryColor
@@ -108,9 +109,10 @@ export function getPaletteFromUrl (url: string): any{
     return new Promise (function(resolve, reject) {
         request(url, function (error:any, response:any, body:any) {
             //TODO
-            console.log(error)
+            // console.log(error)
 
             const buffer = new Buffer(body)
+            resolve(buffer)
             let vibrantRequest = new Vibrant(buffer)
             vibrantRequest.getPalette()
             .then((palette:any) => {
@@ -123,6 +125,29 @@ export function getPaletteFromUrl (url: string): any{
             })
     
         });
+    })
+}
+
+//TODO: for testing, remove later
+export function getHardCodedPalette (): any {
+    return new Promise (function(resolve, reject) {
+        // request(url, function (error:any, response:any, body:any) {
+            //TODO
+            // console.log(error)
+
+            // const buffer = new Buffer(body)
+        let vibrantRequest = new Vibrant("/assets/test")
+        vibrantRequest.getPalette()
+        .then((palette:any) => {
+            let vibrant = <Vibrant.VibrantResponse>palette
+            let colorPalette = new ColorPalette(vibrant)
+            resolve(colorPalette)
+        })
+        .catch((error:Error) =>{
+            reject(error)
+        })
+    
+        // });
     })
 }
 

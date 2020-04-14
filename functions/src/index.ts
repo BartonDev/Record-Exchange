@@ -17,7 +17,7 @@ import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} 
 
 import {getPreview} from "./getPreview"
 
-import { ColorPalette, getPaletteFromUrl } from "./colorPalette"
+import { getPaletteFromUrl } from "./colorPalette"
 
 import {addPlaylistToLibrarySpotify} from "./libraryManager"
 import { APPLE_TOKEN } from './credentials';
@@ -263,7 +263,7 @@ exports.getPreview = functions.https.onCall((data, context) => {
         .then((object:any)=>{
             let coverImageUrl = object["coverImage"]
             getPaletteFromUrl(coverImageUrl)
-            .then((palette: ColorPalette)=>{
+            .then((palette: any)=>{
                 object["palette"] = palette
                 resolve(JSON.stringify(object))
             })
