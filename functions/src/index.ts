@@ -17,16 +17,19 @@ import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} 
 
 import {getPreview} from "./getPreview"
 
-import { getPaletteFromUrl } from "./colorPalette"
+// import {ColorPalette, getPaletteFromUrl, getPaletteFromBuffer} from "./colorPalette"
 
 import {addPlaylistToLibrarySpotify} from "./libraryManager"
 import { APPLE_TOKEN } from './credentials';
+
 // import { app } from 'firebase-admin';
 // import { user } from 'firebase-functions/lib/providers/auth';
 
 
 const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
+// const axios = require('axios')
+
 
 //TODO: Unique Errors for different cases  -  (Music Not Found Error)
 
@@ -261,19 +264,33 @@ exports.getPreview = functions.https.onCall((data, context) => {
     return new Promise(function(resolve, reject){
         getPreview(serviceType, objectType, id)
         .then((object:any)=>{
-            let coverImageUrl = object["coverImage"]
-            getPaletteFromUrl(coverImageUrl)
-            .then((palette: any)=>{
-                object["palette"] = palette
-                resolve(JSON.stringify(object))
-            })
-            .catch((error:Error)=>{
-                console.log(error)
-                reject(error)
-            })
+            resolve(JSON.stringify(object))
         })
         .catch((error:Error)=>{
             reject(error)
         })
     })
 });
+
+// exports.getPallete = functions.https.onCall((data, context) =>{
+
+// })
+
+// export const yes = functions.https.onRequest((req, res) =>{
+//     // const url = 'https://i.scdn.co/image/ab67616d0000b2736b9b7bdaa8ba32f221d74794'
+//     const url = 'https://is4-ssl.mzstatic.com/image/thumb/SG-S3-US-Std-Image-000002/v4/4a/30/fd/4a30fde3-d19c-8ca5-c36d-c85de3a75d00/image/650x650cc.jpeg'
+//     axios.get(url,  { responseType: 'arraybuffer' })
+//     .then((response:any)=>{
+//         const buffer = Buffer.from(response.data, "utf-8")
+//         // res.send(buffer)
+
+//         getPaletteFromBuffer(buffer)
+//         .then((data:any) =>{
+//             res.send(data)
+//         })
+//         .catch((error:Error)=>{
+//             res.send(error)
+//         })
+        
+//     })
+// })

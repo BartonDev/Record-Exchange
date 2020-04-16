@@ -112,7 +112,7 @@ export function getPaletteFromUrl (url: string): any{
             // console.log(error)
 
             const buffer = new Buffer(body)
-            resolve(buffer)
+            // resolve(buffer)
             let vibrantRequest = new Vibrant(buffer)
             vibrantRequest.getPalette()
             .then((palette:any) => {
@@ -129,25 +129,45 @@ export function getPaletteFromUrl (url: string): any{
 }
 
 //TODO: for testing, remove later
-export function getHardCodedPalette (): any {
-    return new Promise (function(resolve, reject) {
-        // request(url, function (error:any, response:any, body:any) {
-            //TODO
-            // console.log(error)
+// export function getHardCodedPalette (): any {
+//     return new Promise (function(resolve, reject) {
+//         request(url, function (error:any, response:any, body:any) {
+            
+//             // console.log(error)
 
-            // const buffer = new Buffer(body)
-        let vibrantRequest = new Vibrant("/assets/test")
-        vibrantRequest.getPalette()
+//             const buffer = new Buffer(body)
+//             let vibrantRequest = new Vibrant("/assets/test")
+//             vibrantRequest.getPalette()
+//             .then((palette:any) => {
+//                 let vibrant = <Vibrant.VibrantResponse>palette
+//                 let colorPalette = new ColorPalette(vibrant)
+//                 resolve(colorPalette)
+//             })
+//             .catch((error:Error) =>{
+//                 reject(error)
+//             })
+    
+//         });
+//     })
+// }
+
+
+export function getPaletteFromBuffer (buffer:Buffer): any {
+    return new Promise (function(resolve, reject) {
+        // let opt = {
+        //     // colorCount: 2,
+        //     quality: 100,
+        //     // maxDimension: 50,
+        // }
+        // let vibrantRequest = new Vibrant(buffer, opt)
+        let v = Vibrant.from(buffer).quality(100)
+        v.getPalette()
         .then((palette:any) => {
-            let vibrant = <Vibrant.VibrantResponse>palette
-            let colorPalette = new ColorPalette(vibrant)
-            resolve(colorPalette)
+           resolve(palette)
         })
         .catch((error:Error) =>{
             reject(error)
         })
-    
-        // });
     })
 }
 
