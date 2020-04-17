@@ -14,6 +14,10 @@ export module Apple {
         description: Description;
     }
 
+    export interface Preview {
+        url: string;
+    }
+
     export interface TrackAttributes {
         artwork: Artwork;
         artistName: string;
@@ -21,6 +25,7 @@ export module Apple {
         name: string;
         albumName: string;
         durationInMillis: string;
+        previews: Preview;
     }
 
     export interface AlbumAttributes {
