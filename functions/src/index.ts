@@ -207,9 +207,7 @@ export const test = functions.https.onRequest((req, res) =>{
 
 export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
-        // const url = 'https://api.music.apple.com/v1/me/library/playlists'
         let userToken = req.body.userToken
-        // let playlistData = req.body.playlistData
         let playlist = new JsonUniversalPlaylist(req.body.playlistData)
 
         addPlaylistToLibraryApple(playlist, userToken)
@@ -220,46 +218,6 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
             console.log(error)
             res.status(400).send(error)
         })
-
-        // var trackDataArray  = Array<any>()
-        // for (let track of playlist.tracks){
-        //     let trackData = {
-        //         "id": track.appleId,
-        //         "type":"songs"
-        //     }
-        //     trackDataArray.push(trackData)
-        // }
-        // let data = {
-        //     "attributes":{
-        //        "name":playlist.name,
-        //        "description":playlist.description
-        //     },
-        //     "relationships":{
-        //        "tracks":{
-        //           "data": trackDataArray
-        //        }
-        //     }
-        // }
-
-        // const options = {
-        //     method: 'POST',
-        //     headers: {
-        //         'Music-User-Token': userToken,
-        //         Authorization: `Bearer ${APPLE_TOKEN}`,
-        //         "Content-Type": 'application/json',
-        //     },
-        //     body: JSON.stringify(data)
-        // };
-    
-        // fetch(url, options)
-        // .then( (res:any) => res.JSON())
-        // .then( (data:any) => {
-        //     console.log("return", data)
-        // })
-        // .catch((error:Error) => {
-        //     console.log("error", error)
-        // })
-
     })
 })
 
@@ -277,26 +235,3 @@ exports.getPreviewIOS = functions.https.onCall((data, context) => {
         })
     })
 });
-
-// exports.getPallete = functions.https.onCall((data, context) =>{
-
-// })
-
-// export const yes = functions.https.onRequest((req, res) =>{
-//     // const url = 'https://i.scdn.co/image/ab67616d0000b2736b9b7bdaa8ba32f221d74794'
-//     const url = 'https://is4-ssl.mzstatic.com/image/thumb/SG-S3-US-Std-Image-000002/v4/4a/30/fd/4a30fde3-d19c-8ca5-c36d-c85de3a75d00/image/650x650cc.jpeg'
-//     axios.get(url,  { responseType: 'arraybuffer' })
-//     .then((response:any)=>{
-//         const buffer = Buffer.from(response.data, "utf-8")
-//         // res.send(buffer)
-
-//         getPaletteFromBuffer(buffer)
-//         .then((data:any) =>{
-//             res.send(data)
-//         })
-//         .catch((error:Error)=>{
-//             res.send(error)
-//         })
-        
-//     })
-// })
