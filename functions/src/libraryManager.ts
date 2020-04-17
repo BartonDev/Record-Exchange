@@ -1,4 +1,6 @@
 import {UniversalTrack, UniversalPlaylist} from "./musicObjects"
+import { APPLE_TOKEN } from './credentials';
+
 
 const fetch = require('cross-fetch')
 
@@ -146,4 +148,50 @@ function setCoverImageSpotify (authCode: string, playlistId: string, imageUrl: s
 }
 
 //APPLE
+
+export function addPlaylistToLibraryApple (playlist: UniversalPlaylist, userToken: string): any{
+    return new Promise (function(resolve, reject){
+        const url = 'https://api.music.apple.com/v1/me/library/playlists'
+
+        var trackDataArray  = Array<any>()
+        for (let track of playlist.tracks){
+            let trackData = {
+                "id": track.appleId,
+                "type":"songs"
+            }
+            trackDataArray.push(trackData)
+        }
+        let data = {
+            "attributes":{
+               "name":playlist.name,
+               "description":playlist.description
+            },
+            "relationships":{
+               "tracks":{
+                  "data": trackDataArray
+               }
+            }
+        }
+
+        const options = {
+            method: 'POST',
+            headers: {
+                'Music-User-Token': userToken,
+                Authorization: `Bearer ${APPLE_TOKEN}`,
+                "Content-Type": 'application/json',
+            },
+            body: JSON.stringify(data)
+        };
+    
+        fetch(url, options)
+        .then( (res:any) => res.JSON())
+        .then( (data:any) => {
+            console.log("return", data)
+        })
+        .catch((error:Error) => {
+            console.log("error", error)
+        })
+    })
+
+}
 

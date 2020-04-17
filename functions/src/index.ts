@@ -10,23 +10,18 @@ import {UniversalPlaylist, JsonUniversalPlaylist} from "./musicObjects"
 import {fetchPlaylistFirestore, fetchAlbumFirestore, fetchTrackFirestore} from "./firestoreManager"
 import {storeUniversalPlaylist} from "./firestoreManager"
 
-// import {getSpotifyTrack, getAppleTrack, getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
-
 import {spotifyTrackToUniversal, spotifyAlbumToUniversal, spotifyPlaylistToUniversal} from "./convertMusic"
 import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} from "./convertMusic"
 
-import {getPreview} from "./getPreview"
+import {getObjectPreview} from "./getPreview"
 
-// import {ColorPalette, getPaletteFromUrl, getPaletteFromBuffer} from "./colorPalette"
-
-import {addPlaylistToLibrarySpotify} from "./libraryManager"
-import { APPLE_TOKEN } from './credentials';
+import {addPlaylistToLibrarySpotify, addPlaylistToLibraryApple} from "./libraryManager"
+// import { APPLE_TOKEN } from './credentials';
 
 // import { app } from 'firebase-admin';
 // import { user } from 'firebase-functions/lib/providers/auth';
 
-
-const fetch = require('cross-fetch')
+// const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
 // const axios = require('axios')
 
@@ -35,13 +30,13 @@ const cors = require('cors')({origin:true});
 
 //Misc Functions
 
-export const getPreview_HTTPS = functions.https.onRequest((req, res)=> {
+export const getPreview = functions.https.onRequest((req, res)=> {
     return cors(req, res, () => {
-        
-        let serviceType = req.body.data.serviceType
-        let objectType = req.body.data.objectType
-        let id = req.body.data.id 
-        getPreview(serviceType, objectType, id)
+        console.log(req)
+        let serviceType = req.body.serviceType
+        let objectType = req.body.objectType
+        let id = req.body.id 
+        getObjectPreview(serviceType, objectType, id)
         .then((object:any)=>{
             res.status(200).send(object)
         })
@@ -212,57 +207,68 @@ export const test = functions.https.onRequest((req, res) =>{
 
 export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
-        const url = 'https://api.music.apple.com/v1/me/library/playlists'
+        // const url = 'https://api.music.apple.com/v1/me/library/playlists'
         let userToken = req.body.userToken
-        let playlistData = req.body.playlistData
-        var trackDataArray  = Array<any>()
-        for (let track of playlistData.tracks){
-            let trackData = {
-                "id": track.appleId,
-                "type":"songs"
-            }
-            trackDataArray.push(trackData)
-        }
-        let data = {
-            "attributes":{
-               "name":playlistData.name,
-               "description":playlistData.description
-            },
-            "relationships":{
-               "tracks":{
-                  "data": trackDataArray
-               }
-            }
-        }
+        // let playlistData = req.body.playlistData
+        let playlist = new JsonUniversalPlaylist(req.body.playlistData)
 
-        const options = {
-            method: 'POST',
-            headers: {
-                'Music-User-Token': userToken,
-                Authorization: `Bearer ${APPLE_TOKEN}`,
-                "Content-Type": 'application/json',
-            },
-            body: JSON.stringify(data)
-        };
+        addPlaylistToLibraryApple(playlist, userToken)
+        .then(()=>{
+            res.status(200).send()
+        })
+        .catch((error:Error) =>{
+            console.log(error)
+            res.status(400).send(error)
+        })
+
+        // var trackDataArray  = Array<any>()
+        // for (let track of playlist.tracks){
+        //     let trackData = {
+        //         "id": track.appleId,
+        //         "type":"songs"
+        //     }
+        //     trackDataArray.push(trackData)
+        // }
+        // let data = {
+        //     "attributes":{
+        //        "name":playlist.name,
+        //        "description":playlist.description
+        //     },
+        //     "relationships":{
+        //        "tracks":{
+        //           "data": trackDataArray
+        //        }
+        //     }
+        // }
+
+        // const options = {
+        //     method: 'POST',
+        //     headers: {
+        //         'Music-User-Token': userToken,
+        //         Authorization: `Bearer ${APPLE_TOKEN}`,
+        //         "Content-Type": 'application/json',
+        //     },
+        //     body: JSON.stringify(data)
+        // };
     
-        fetch(url, options)
-        .then( (res:any) => res.JSON())
-        .then( (data:any) => {
-            console.log("return", data)
-        })
-        .catch((error:Error) => {
-            console.log("error", error)
-        })
+        // fetch(url, options)
+        // .then( (res:any) => res.JSON())
+        // .then( (data:any) => {
+        //     console.log("return", data)
+        // })
+        // .catch((error:Error) => {
+        //     console.log("error", error)
+        // })
 
     })
 })
 
-exports.getPreview = functions.https.onCall((data, context) => {
+exports.getPreviewIOS = functions.https.onCall((data, context) => {
     let serviceType = data.serviceType
     let objectType = data.objectType
     let id = data.id 
     return new Promise(function(resolve, reject){
-        getPreview(serviceType, objectType, id)
+        getObjectPreview(serviceType, objectType, id)
         .then((object:any)=>{
             resolve(JSON.stringify(object))
         })

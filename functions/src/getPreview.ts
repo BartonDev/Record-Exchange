@@ -7,7 +7,7 @@ import {ApplePlaylist, SpotifyPlaylist} from "./musicObjects"
 
 import {getSpotifyTrack, getAppleTrack, getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
 
-export function getPreview (serviceType: string, objectType: string, id: string):any{
+export function getObjectPreview (serviceType: string, objectType: string, id: string):any{
     return new Promise (function (resolve, reject) {
         if (serviceType == ServiceType.spotify) {
             getSpotifyToken()
