@@ -25,7 +25,7 @@ export module Apple {
         name: string;
         albumName: string;
         durationInMillis: string;
-        previews: Preview;
+        previews: [Preview];
     }
 
     export interface AlbumAttributes {

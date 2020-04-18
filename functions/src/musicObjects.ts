@@ -132,7 +132,8 @@ export class AppleTrack extends Track{
         let rawCoverImage = data.attributes.artwork.url
         let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
         let duration = msToStandard(data.attributes.durationInMillis)
-        let preview = data.attributes.previews.url
+        console.log(data.attributes.previews)
+        let preview = data.attributes.previews[0].url
         super(name, artist, album, coverImage, duration, preview)
         this.id = data.id
         this.genres = data.attributes.genreNames
@@ -148,7 +149,7 @@ export class SpotifyTrack extends Track {
         let album = data.album.name
         let coverImage = data.album.images[0].url
         let duration =  msToStandard(data.duration_ms)
-        let preview = data.preview_url
+        let preview = "data.preview_url"
         super(name, artist, album, coverImage, duration, preview)
 
         this.id = data.id
@@ -188,7 +189,9 @@ export class UniversalTrack extends Track {
         let album = spotifyTrack.album
         let coverImage = spotifyTrack.coverImage
         let duration = spotifyTrack.duration
+        
         let preview = appleTrack.preview
+        console.log("look here", preview)
         super(name, artist, album, coverImage, duration, preview)
 
         // this.preview = spotifyTrack.preview
