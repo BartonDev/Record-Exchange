@@ -5,32 +5,6 @@ import {msToStandard, sanitizeStringBasic, sanitizeStringComplex} from "./string
 
 export enum MatchValue {different, similar, match}
 
-// export class MatchResult {
-//     value: MatchValue
-//     namePercentage: number
-//     artistPercentage: number
-//     albumPercentage: number
-
-//     constructor(value: MatchValue, namePercentage: number = 0, artistPercentage: number = 0 , albumPercentage: number = 0){
-//         this.value = value
-
-//         if (this.value == MatchValue.exactMatch){
-//             this.namePercentage = 1
-//             this.artistPercentage = 1
-//             this.albumPercentage = 1
-//         } else if (this.value == MatchValue.nonMatch) {
-//             this.namePercentage = 0
-//             this.artistPercentage = 0
-//             this.albumPercentage = 0
-//         } else {
-//             this.namePercentage = namePercentage
-//             this.artistPercentage = artistPercentage
-//             this.albumPercentage = albumPercentage
-//         }
-        
-//     }
-// }
-
 export class ComparisonResult {
     nameResult: MatchValue
     artistResult: MatchValue
@@ -132,7 +106,6 @@ export class AppleTrack extends Track{
         let rawCoverImage = data.attributes.artwork.url
         let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
         let duration = msToStandard(data.attributes.durationInMillis)
-        console.log(data.attributes.previews)
         let preview = data.attributes.previews[0].url
         super(name, artist, album, coverImage, duration, preview)
         this.id = data.id
@@ -179,9 +152,7 @@ export class UniversalTrack extends Track {
     id: string;
     spotifyId: string;
     appleId: string;
-    // coverImage: string;
     genres: string[];
-    // preview: string;
 
     constructor(spotifyTrack: SpotifyTrack, appleTrack: AppleTrack){
         let name = spotifyTrack.name
@@ -191,10 +162,8 @@ export class UniversalTrack extends Track {
         let duration = spotifyTrack.duration
         
         let preview = appleTrack.preview
-        console.log("look here", preview)
         super(name, artist, album, coverImage, duration, preview)
 
-        // this.preview = spotifyTrack.preview
         this.spotifyId = spotifyTrack.id
         this.appleId = appleTrack.id
         this.genres = appleTrack.genres
@@ -221,9 +190,7 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
     id: string;
     spotifyId: string;
     appleId: string;
-    // coverImage: string;
     genres: string[];
-    // preview: string;
 
     constructor(firestoreData: Firestore.FirestoreTrackData, firestoreId: string){
         let name = firestoreData.name
@@ -266,7 +233,6 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
     spotifyId: string;
     appleId: string;
     genres: string[];
-    // preview: string;
 
     constructor(jsonString: string ){
         let trackData = JSON.parse(jsonString)

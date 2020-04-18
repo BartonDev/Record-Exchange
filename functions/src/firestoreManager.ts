@@ -16,7 +16,6 @@ export function storeUniversalTrack (track: UniversalTrack): any {
     } 
 
     return new Promise (function (resolve, reject) {
-        console.log("ttacl", track)
         admin.firestore().collection("tracks").doc(track.id).set(track.toFirestoreData())
         .then(function() {
             resolve()

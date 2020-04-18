@@ -155,7 +155,6 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
             let goalPromises = playlist.tracks.length
             var universalTracks = new Array<UniversalTrack>()
             for (const [index, spotifyTrack] of playlist.tracks.entries()){
-                console.log("rpeive", spotifyTrack.preview)
                 setTimeout(function(){
                     searchAppleTrack(spotifyTrack.baseTrack())
                     .then((appleTrack:AppleTrack) => {
