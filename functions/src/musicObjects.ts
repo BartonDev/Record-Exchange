@@ -2,6 +2,7 @@ import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
 import {ObjectType} from "./musicEnums"
 import {msToStandard, sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
+// import { app } from "firebase-admin"
 
 export enum MatchValue {different, similar, match}
 
@@ -106,7 +107,10 @@ export class AppleTrack extends Track{
         let rawCoverImage = data.attributes.artwork.url
         let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
         let duration = msToStandard(data.attributes.durationInMillis)
-        let preview = data.attributes.previews[0].url
+        var preview = ""
+        if (data.attributes.previews != undefined && data.attributes.previews.length){
+            preview = data.attributes.previews[0].url
+        }
         super(name, artist, album, coverImage, duration, preview)
         this.id = data.id
         this.genres = data.attributes.genreNames
@@ -122,7 +126,7 @@ export class SpotifyTrack extends Track {
         let album = data.album.name
         let coverImage = data.album.images[0].url
         let duration =  msToStandard(data.duration_ms)
-        let preview = "data.preview_url"
+        let preview = data.preview_url
         super(name, artist, album, coverImage, duration, preview)
 
         this.id = data.id
@@ -160,8 +164,12 @@ export class UniversalTrack extends Track {
         let album = spotifyTrack.album
         let coverImage = spotifyTrack.coverImage
         let duration = spotifyTrack.duration
-        
-        let preview = appleTrack.preview
+        var preview = ""
+        if (spotifyTrack.preview){
+            preview = spotifyTrack.preview
+        } else if (appleTrack.preview){
+            preview = appleTrack.preview
+        }
         super(name, artist, album, coverImage, duration, preview)
 
         this.spotifyId = spotifyTrack.id
@@ -353,6 +361,7 @@ export class AppleAlbum extends Album{
     tracks: Array<AppleTrack>
 
     constructor (data: Apple.AlbumData){
+        
         let name = data.attributes.name
         let artist = data.attributes.artistName
         super(name, artist)
