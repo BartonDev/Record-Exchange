@@ -99,8 +99,10 @@ export class Track {
 export class AppleTrack extends Track{
     id: string;
     genres: Array<string>;
+    link: string;
 
     constructor(data: Apple.TrackData){
+        console.log("data", data)
         let name = data.attributes.name
         let artist = data.attributes.artistName
         let album = data.attributes.albumName
@@ -114,6 +116,8 @@ export class AppleTrack extends Track{
         super(name, artist, album, coverImage, duration, preview)
         this.id = data.id
         this.genres = data.attributes.genreNames
+        this.link = ""
+        // if data.attributes.li
     }
 }
 

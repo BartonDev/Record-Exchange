@@ -14,6 +14,8 @@ export function sanitizeStringComplex (string: string): string {
     }
     processedString = processedString.replace(/(- single)/i, '')
     processedString = processedString.replace(/(- ep)/i, '')
+    processedString = processedString.replace(/( ep\Z)/i, '')
+    processedString = processedString.replace(/( ep[^a-z])/i, '')
     processedString = processedString.replace(/[-:&!?()]/g, '')
     processedString = processedString.replace(/remastered\ (\d+)/i, '')
     processedString = processedString.replace(/remaster\ (\d+)/i, '')
