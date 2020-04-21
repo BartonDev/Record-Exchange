@@ -21,6 +21,7 @@ export module Apple {
     export interface TrackAttributes {
         artwork: Artwork;
         artistName: string;
+        url: string;
         genreNames: string[];
         name: string;
         albumName: string;
@@ -196,6 +197,7 @@ export module Firestore {
         genres?: [string];
         duration: string;
         preview: string;
+        appleLink: string;
     }
 
     export interface FirestoreAlbumData {

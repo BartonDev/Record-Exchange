@@ -81,7 +81,7 @@ export function searchAppleTrack(searchTrack:Track): any {
         })
         .then( (data:any) => {
             let parsedResponse = <Apple.TrackSearchResponse> data
-
+            console.log(parsedResponse)
             var bestMatch :any = undefined
             var bestMatchComparisonResult: any = undefined
 
@@ -120,7 +120,6 @@ export function searchAppleTrack(searchTrack:Track): any {
 
 export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
     return new Promise (function(resolve, reject) {
-        console.log("1")
         let query = createQueryUri(searchAlbum.name, searchAlbum.artist)
 
         const url = `https://api.spotify.com/v1/search?q=${query}&type=album`;
@@ -176,10 +175,8 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
 }
 
 export function searchAppleAlbum (searchAlbum:Album):any{
-    console.log("2")
     return new Promise (function(resolve, reject) {
         let query = createQueryUri(searchAlbum.name, searchAlbum.artist)
-        console.log("q", query)
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=albums`;
         const options = {
             headers: {
@@ -190,9 +187,7 @@ export function searchAppleAlbum (searchAlbum:Album):any{
         fetch(url, options)
         .then( (res:any) => res.json())
         .then( (data:any) => {
-
             let parsedResponse = <Apple.AlbumSearchResponse> data
-            console.log("p", parsedResponse)
             var bestMatchComparisonResult: any = undefined
             var bestMatchId: any = undefined
 

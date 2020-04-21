@@ -116,7 +116,7 @@ export class AppleTrack extends Track{
         super(name, artist, album, coverImage, duration, preview)
         this.id = data.id
         this.genres = data.attributes.genreNames
-        this.link = ""
+        this.link = data.attributes.url
         // if data.attributes.li
     }
 }
@@ -161,6 +161,7 @@ export class UniversalTrack extends Track {
     spotifyId: string;
     appleId: string;
     genres: string[];
+    appleLink: string;
 
     constructor(spotifyTrack: SpotifyTrack, appleTrack: AppleTrack){
         let name = spotifyTrack.name
@@ -179,7 +180,7 @@ export class UniversalTrack extends Track {
         this.spotifyId = spotifyTrack.id
         this.appleId = appleTrack.id
         this.genres = appleTrack.genres
-
+        this.appleLink = appleTrack.link
         this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.track)
     }
 
@@ -193,7 +194,8 @@ export class UniversalTrack extends Track {
             coverImage: this.coverImage,
             genres: this.genres,
             duration: this.duration,
-            preview: this.preview
+            preview: this.preview,
+            appleLink: this.appleLink
         })
     }
 }
@@ -203,6 +205,7 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
     spotifyId: string;
     appleId: string;
     genres: string[];
+    appleLink: string;
 
     constructor(firestoreData: Firestore.FirestoreTrackData, firestoreId: string){
         let name = firestoreData.name
@@ -217,6 +220,7 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
         this.spotifyId = firestoreData.spotifyId
         this.appleId = firestoreData.appleId
         this.id = firestoreId
+        this.appleLink = firestoreData.appleLink;
 
         if (firestoreData.genres != undefined){
             this.genres = firestoreData.genres
@@ -235,7 +239,8 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
             coverImage: this.coverImage,
             genres: this.genres,
             duration: this.duration,
-            preview: this.preview
+            preview: this.preview,
+            appleLink: this.appleLink
         })
     }
 }
@@ -245,6 +250,7 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
     spotifyId: string;
     appleId: string;
     genres: string[];
+    appleLink: string;
 
     constructor(jsonString: string ){
         let trackData = JSON.parse(jsonString)
@@ -257,6 +263,7 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
 
         super(name, artist, album, coverImage, duration, preview)
 
+        this.appleLink = trackData.appleLink
         this.spotifyId = trackData.spotifyId
         this.appleId = trackData.appleId
         this.id = trackData.id
@@ -273,7 +280,8 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
             coverImage: this.coverImage,
             genres: this.genres,
             duration: this.duration,
-            preview: this.preview
+            preview: this.preview,
+            appleLink: this.appleLink
         })
     }
 }
