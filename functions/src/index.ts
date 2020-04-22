@@ -187,8 +187,8 @@ export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
     })
 })
 
-//TODO: Something is wrong here with cors, come back to it
-export const test = functions.https.onRequest((req, res) =>{
+//TODO: Something is wrong here with cors, come back to it (hopefully resolved now)
+export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         let authCode = req.body.authorizationCode
         let playlist = new JsonUniversalPlaylist(req.body.playlistData)
