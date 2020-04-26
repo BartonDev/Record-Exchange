@@ -1,6 +1,10 @@
 import Vibrant = require('node-vibrant')
 const request = require('request').defaults({encoding:null});
 
+//DEPRECATED
+// ~3x slower than color theif
+// provides better information but isnt worth performance trade-off at this time
+
 export class ColorPalette {
     vibrant: string
     lightVibrant: string

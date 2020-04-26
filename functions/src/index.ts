@@ -17,8 +17,6 @@ import {getObjectPreview} from "./getPreview"
 
 import {addPlaylistToLibrarySpotify, addPlaylistToLibraryApple} from "./libraryManager"
 import {getColorFromUrl} from "./colorManager"
-// import {getPaletteFromUrl} from "./colorPalette"
-// import { APPLE_TOKEN } from './credentials';
 
 // import { app } from 'firebase-admin';
 // import { user } from 'firebase-functions/lib/providers/auth';
