@@ -16,6 +16,8 @@ import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} 
 import {getObjectPreview} from "./getPreview"
 
 import {addPlaylistToLibrarySpotify, addPlaylistToLibraryApple} from "./libraryManager"
+import {getColorFromUrl} from "./colorManager"
+// import {getPaletteFromUrl} from "./colorPalette"
 // import { APPLE_TOKEN } from './credentials';
 
 // import { app } from 'firebase-admin';
@@ -187,7 +189,6 @@ export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
     })
 })
 
-//TODO: Something is wrong here with cors, come back to it (hopefully resolved now)
 export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
     return cors(req, res, () => {
         let authCode = req.body.authorizationCode
@@ -235,3 +236,13 @@ exports.getPreviewIOS = functions.https.onCall((data, context) => {
         })
     })
 });
+
+export const test = functions.https.onRequest((req, res) =>{
+    getColorFromUrl('https://i.scdn.co/image/ab67616d0000b273661d019f34569f79eae9e985')
+    .then((res:any)=>{
+        res.send(res)
+    })
+    .catch((error:Error) =>{   
+        res.send(error)
+    })
+})
