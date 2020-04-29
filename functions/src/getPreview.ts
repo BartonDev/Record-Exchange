@@ -31,7 +31,13 @@ export function getObjectPreview (serviceType: string, objectType: string, id: s
                 } else if (objectType == ObjectType.album){
                     getSpotifyAlbum(id, spotifyToken)
                     .then((spotifyAlbum:SpotifyAlbum)=>{
-                        resolve(spotifyAlbum)
+                        spotifyAlbum.updateColor()
+                        .then(()=>{
+                            resolve(spotifyAlbum)
+                        })
+                        .catch((error:Error)=>{
+                            reject()
+                        })
                     })
                     .catch((error:Error) =>{
                         reject(error)
