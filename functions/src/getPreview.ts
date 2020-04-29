@@ -45,7 +45,13 @@ export function getObjectPreview (serviceType: string, objectType: string, id: s
                 } else if (objectType == ObjectType.track){
                     getSpotifyTrack(id, spotifyToken)
                     .then((spotifyTrack:SpotifyTrack)=>{
-                        resolve(spotifyTrack)
+                        spotifyTrack.updateColor()
+                        .then(()=>{
+                            resolve(spotifyTrack)
+                        })
+                        .catch((error:Error)=>{
+                            reject()
+                        })
                     })
                     .catch((error:Error) =>{
                         reject(error)
@@ -62,7 +68,13 @@ export function getObjectPreview (serviceType: string, objectType: string, id: s
             if (objectType == ObjectType.playlist){
                 getApplePlaylist(id)
                 .then((applePlaylist:ApplePlaylist) => {
-                    resolve(applePlaylist)
+                    applePlaylist.updateColor()
+                    .then(()=>{
+                        resolve(applePlaylist)
+                    })
+                    .catch((error:Error)=>{
+                        reject()
+                    })
                 })
                 .catch((error:Error) =>{
                     reject(error)
@@ -70,7 +82,13 @@ export function getObjectPreview (serviceType: string, objectType: string, id: s
             } else if (objectType == ObjectType.album){
                 getAppleAlbum(id)
                 .then((appleAlbum:AppleAlbum) => {
-                    resolve(appleAlbum)
+                    appleAlbum.updateColor()
+                    .then(()=>{
+                        resolve(appleAlbum)
+                    })
+                    .catch((error:Error)=>{
+                        reject()
+                    })
                 })
                 .catch((error:Error) =>{
                     reject(error)
@@ -78,7 +96,13 @@ export function getObjectPreview (serviceType: string, objectType: string, id: s
             } else if (objectType == ObjectType.track){
                 getAppleTrack(id)
                 .then((appleTrack:AppleTrack) => {
-                    resolve(appleTrack)
+                    appleTrack.updateColor()
+                    .then(()=>{
+                        resolve(appleTrack)
+                    })
+                    .catch((error:Error)=>{
+                        reject()
+                    })
                 })
                 .catch((error:Error) =>{
                     reject(error)
