@@ -159,8 +159,7 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
                     searchAppleTrack(spotifyTrack.baseTrack())
                     .then((appleTrack:AppleTrack) => {
                         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                        universalTrack
-                        .updateColor()
+                        universalTrack.updateColor()
                         .then(()=>{
                             storeUniversalTrack(universalTrack)
                             .catch((error:Error) =>{
@@ -210,11 +209,25 @@ export function applePlaylistToUniversal (playlistId: string, token: SpotifyToke
             for (let appleTrack of playlist.tracks){
                 searchSpotifyTrack(appleTrack.baseTrack(), token)
                 .then((spotifyTrack:SpotifyTrack) => {
-                    universalTracks.push(new UniversalTrack(spotifyTrack, appleTrack))
+                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                    universalTrack.updateColor()
+                    .then(()=>{
+                        storeUniversalTrack(universalTrack)
+                        .catch((error:Error) =>{
+                            console.log(error)
+                        })
+                        universalTracks.push(universalTrack)
+                        fullfilledPromises += 1
+                        if (fullfilledPromises == goalPromises){
+                            let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                            resolve(universalPlaylist)
+                        }
+                    })
+                    .catch((error:Error)=>{
+                        reject(error)
+                    })
                 })
                 .catch( (error:Error) => {
-                })
-                .then (()=>{
                     fullfilledPromises += 1
                     if (fullfilledPromises == goalPromises){
                         let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
