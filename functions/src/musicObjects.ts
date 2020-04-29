@@ -4,6 +4,9 @@ import {ObjectType} from "./musicEnums"
 import {msToStandard, sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
 // import { app } from "firebase-admin"
 
+import {getColorFromUrl} from "./colorManager"
+
+
 export enum MatchValue {different, similar, match}
 
 export class ComparisonResult {
@@ -27,6 +30,7 @@ export class Track {
     coverImage: string;
     duration: string;
     preview: string;
+    color: string;
 
     constructor(name: string, artist: string, album: string, coverImage: string, duration: string, preview: string){
         this.name = name
@@ -35,6 +39,7 @@ export class Track {
         this.coverImage = coverImage
         this.duration = duration
         this.preview = preview
+        this.color = '#FFFFFF'
     }
 
     compare (comparisonTrack: Track): ComparisonResult {
@@ -93,6 +98,19 @@ export class Track {
 
     baseTrack():Track {
         return this
+    }
+
+    updateColor():any{
+        return new Promise((resolve, reject) => {
+            getColorFromUrl(this.coverImage)
+            .then((color:string) => {
+                this.color = color
+                resolve()
+            })
+            .catch(()=>{
+                reject()
+            })
+        })
     }
 }
 
@@ -290,10 +308,14 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
 export class Album {
     name: string
     artist: string
-    
-    constructor(name: string, artist: string){
+    coverImage: string
+    color: string
+
+    constructor(name: string, artist: string, coverImage: string){
         this.name = name
         this.artist = artist
+        this.coverImage = coverImage
+        this.color = '#FFFFFF'
     }
 
     compare (comparisonAlbum: Album): ComparisonResult {
@@ -330,17 +352,28 @@ export class Album {
 
         return new  ComparisonResult(nameResult, artistResult, MatchValue.match)
     }
-    
 
     baseAlbum():Album {
         return this
+    }
+
+    updateColor():any{
+        return new Promise((resolve, reject) => {
+            getColorFromUrl(this.coverImage)
+            .then((color:string) => {
+                this.color = color
+                resolve()
+            })
+            .catch(()=>{
+                reject()
+            })
+        })
     }
 }
 
 //TODO: Clean up artists
 export class SpotifyAlbum extends Album{
     id: string
-    coverImage: string
     genres: Array<any>
     tracks: Array<SpotifyTrack>
 
@@ -351,10 +384,11 @@ export class SpotifyAlbum extends Album{
         }
         let name = data.name
         let artist = artists[0]
-        super(name, artist)
+        let coverImage = data.images[0].url
+        super(name, artist, coverImage)
 
         this.id = data.id
-        this.coverImage = data.images[0].url
+        
         this.genres = data.genres
 
         let tracks = new Array<SpotifyTrack>()
@@ -368,7 +402,6 @@ export class SpotifyAlbum extends Album{
 
 export class AppleAlbum extends Album{
     id: string
-    coverImage: string
     genres: Array<string>
     tracks: Array<AppleTrack>
 
@@ -376,11 +409,13 @@ export class AppleAlbum extends Album{
         
         let name = data.attributes.name
         let artist = data.attributes.artistName
-        super(name, artist)
+        let rawCoverImage = data.attributes.artwork.url
+        let coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
+        super(name, artist, coverImage)
 
         this.id = data.id
-        let rawCoverImage = data.attributes.artwork.url
-        this.coverImage = rawCoverImage.replace('{w}x{h}', '640x640')
+        
+        
         let tracks = new Array<AppleTrack>()
         for (let trackData of data.relationships.tracks.data) {
             let track = new AppleTrack(trackData)
@@ -395,18 +430,18 @@ export class UniversalAlbum extends Album {
     id: string
     spotifyId: string
     appleId: string
-    coverImage: string
     genres: Array<string>
     tracks: Array<UniversalTrack>
 
     constructor(spotifyAlbum:SpotifyAlbum, appleAlbum:AppleAlbum){
         let name = spotifyAlbum.name
         let artist = appleAlbum.artist
-        super(name, artist)
+        let coverImage = spotifyAlbum.coverImage
+        super(name, artist, coverImage)
 
         this.spotifyId = spotifyAlbum.id,
         this.appleId = appleAlbum.id
-        this.coverImage = spotifyAlbum.coverImage
+        
         this.genres = appleAlbum.genres
 
         this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.album)
@@ -462,18 +497,17 @@ export class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
     id: string
     spotifyId: string
     appleId: string
-    coverImage: string
     genres: Array<string>
     tracks: Array<UniversalTrack>
 
     constructor(data: Firestore.FirestoreAlbumData, firestoreId: string){
         let name = data.name
         let artist = data.artist
-        super(name, artist)
+        let coverImage =  data.coverImage
+        super(name, artist, coverImage)
 
         this.spotifyId = data.spotifyId
         this.appleId = data.appleId
-        this.coverImage = data.coverImage
         this.genres = data.genres
 
         this.id = firestoreId
@@ -518,11 +552,28 @@ export class Playlist {
     name: string
     description: string
     coverImage: string
+    color: string 
 
     constructor (name: string, description: string, coverImage: string){
         this.name = name
         this.description = description
         this.coverImage = coverImage
+        this.color = '#FFFFFF'
+
+        this.updateColor = this.updateColor.bind(this)
+    }
+
+    updateColor():any{
+        return new Promise((resolve, reject) => {
+            getColorFromUrl(this.coverImage)
+            .then((color:string) => {
+                this.color = color
+                resolve()
+            })
+            .catch(()=>{
+                reject()
+            })
+        })
     }
 }
 

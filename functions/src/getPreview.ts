@@ -7,6 +7,7 @@ import {ApplePlaylist, SpotifyPlaylist} from "./musicObjects"
 
 import {getSpotifyTrack, getAppleTrack, getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
 
+// import {getColorFromUrl} from "./colorManager"
 
 export function getObjectPreview (serviceType: string, objectType: string, id: string):any{
     return new Promise (function (resolve, reject) {
@@ -16,7 +17,13 @@ export function getObjectPreview (serviceType: string, objectType: string, id: s
                 if (objectType == ObjectType.playlist){
                     getSpotifyPlaylist(id, spotifyToken)
                     .then((spotifyPlaylist:SpotifyPlaylist) =>{
-                        resolve(spotifyPlaylist)
+                        spotifyPlaylist.updateColor()
+                        .then(()=>{
+                            resolve(spotifyPlaylist)
+                        })
+                        .catch((error:Error)=>{
+                            reject()
+                        })
                     })
                     .catch((error:Error) =>{
                         reject(error)
