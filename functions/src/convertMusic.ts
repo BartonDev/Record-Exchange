@@ -159,23 +159,28 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
                     searchAppleTrack(spotifyTrack.baseTrack())
                     .then((appleTrack:AppleTrack) => {
                         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                        universalTrack
+                        .updateColor()
+                        .then(()=>{
+                            storeUniversalTrack(universalTrack)
+                            .catch((error:Error) =>{
+                                console.log(error)
+                            })
 
-                        storeUniversalTrack(universalTrack)
-                        .catch((error:Error) =>{
-                            console.log(error)
+                            if (universalTracks.length > index){
+                                universalTracks.splice(index, 0, universalTrack)
+                            } else {
+                                universalTracks.push(universalTrack)
+                            }
+                            fullfilledPromises += 1
+                            if (fullfilledPromises == goalPromises){
+                                let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                                resolve(universalPlaylist)
+                            }
                         })
-
-                        if (universalTracks.length > index){
-                            universalTracks.splice(index, 0, universalTrack)
-                        } else {
-                            universalTracks.push(universalTrack)
-                        }
-                        fullfilledPromises += 1
-                        if (fullfilledPromises == goalPromises){
-                            let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                            resolve(universalPlaylist)
-                        }
-
+                        .catch((error:Error)=>{
+                            reject(error)
+                        })
                     })
                     .catch( (error:Error) => {
                         fullfilledPromises += 1
