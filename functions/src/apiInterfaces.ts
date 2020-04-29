@@ -198,6 +198,7 @@ export module Firestore {
         duration: string;
         preview: string;
         appleLink: string;
+        color: string;
     }
 
     export interface FirestoreAlbumData {
@@ -208,6 +209,7 @@ export module Firestore {
         appleId: string;
         tracks: FirestoreTrackData[];
         genres: string[];
+        color: string;
     }
 
     export interface FirestorePlaylistData {
@@ -215,6 +217,7 @@ export module Firestore {
         description: string;
         coverImage: string;
         tracks: FirestoreTrackData[];
+        color: string;
     }
 }
 

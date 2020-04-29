@@ -213,7 +213,8 @@ export class UniversalTrack extends Track {
             genres: this.genres,
             duration: this.duration,
             preview: this.preview,
-            appleLink: this.appleLink
+            appleLink: this.appleLink,
+            color: this.color,
         })
     }
 }
@@ -232,13 +233,13 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
         let coverImage = firestoreData.coverImage
         let duration = firestoreData.duration
         let preview = firestoreData.preview
-
         super(name, artist, album, coverImage, duration, preview)
 
         this.spotifyId = firestoreData.spotifyId
         this.appleId = firestoreData.appleId
         this.id = firestoreId
         this.appleLink = firestoreData.appleLink;
+        this.color = firestoreData.color
 
         if (firestoreData.genres != undefined){
             this.genres = firestoreData.genres
@@ -258,7 +259,8 @@ export class FirestoreUniversalTrack extends Track implements UniversalTrack {
             genres: this.genres,
             duration: this.duration,
             preview: this.preview,
-            appleLink: this.appleLink
+            appleLink: this.appleLink,
+            color: this.color,
         })
     }
 }
@@ -299,7 +301,8 @@ export class JsonUniversalTrack extends Track implements UniversalTrack {
             genres: this.genres,
             duration: this.duration,
             preview: this.preview,
-            appleLink: this.appleLink
+            appleLink: this.appleLink,
+            color: this.color,
         })
     }
 }
@@ -486,6 +489,7 @@ export class UniversalAlbum extends Album {
             artist: this.artist,
             coverImage: this.coverImage,
             genres: this.genres,
+            color: this.color,
             tracks: firestoreTracks
            
         })
@@ -511,8 +515,9 @@ export class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
         this.genres = data.genres
 
         this.id = firestoreId
+        this.color = data.color
 
-        //TODO: Implement
+        //TODO: Implement [67845]
         let universalTracks = Array<UniversalTrack>()
         this.tracks = universalTracks
     }
@@ -542,6 +547,7 @@ export class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
             artist: this.artist,
             coverImage: this.coverImage,
             genres: this.genres,
+            color: this.color,
             tracks: firestoreTracks
            
         })
@@ -659,6 +665,7 @@ export class UniversalPlaylist extends Playlist{
             name: this.name,
             description: this.description,
             coverImage: this.coverImage,
+            color: this.color,
             tracks: firestoreTracks
         })
     }
@@ -675,6 +682,7 @@ export class FirestoreUniversalPlaylist extends Playlist implements UniversalPla
         super(name, description, coverImage)
 
         this.id = playlistId
+        this.color = data.color
         var tracks = new Array<UniversalTrack>()
         for (let trackData of data.tracks){
             let trackId = IdHash.createUniversalId(trackData.spotifyId, trackData.appleId, ObjectType.track)
@@ -705,6 +713,7 @@ export class FirestoreUniversalPlaylist extends Playlist implements UniversalPla
             name: this.name,
             description: this.description,
             coverImage: this.coverImage,
+            color: this.color,
             tracks: firestoreTracks
         })
     }
@@ -752,6 +761,7 @@ export class JsonUniversalPlaylist extends Playlist implements UniversalPlaylist
             name: this.name,
             description: this.description,
             coverImage: this.coverImage,
+            color: this.color,
             tracks: firestoreTracks
         })
     }

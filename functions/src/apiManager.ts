@@ -138,7 +138,7 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
             var bestMatchId: any = undefined
 
             for (let albumPreviewData of parsedResponse.albums.items){
-                let comparisonAlbum =  new Album(albumPreviewData.name, albumPreviewData.artists[0].name)
+                let comparisonAlbum =  new Album(albumPreviewData.name, albumPreviewData.artists[0].name, albumPreviewData.images[0].url)
                 let comparisonResult = searchAlbum.compare(comparisonAlbum)
                 let comparisonValue = comparisonResult.value
 
@@ -192,7 +192,7 @@ export function searchAppleAlbum (searchAlbum:Album):any{
             var bestMatchId: any = undefined
 
             for (let albumData of parsedResponse.results.albums.data){
-                let comparisonAlbum =  new Album(albumData.attributes.name, albumData.attributes.artistName)
+                let comparisonAlbum =  new Album(albumData.attributes.name, albumData.attributes.artistName, albumData.attributes.artwork.url)
                 let comparisonResult = searchAlbum.compare(comparisonAlbum)
                 let comparisonValue = comparisonResult.value
 
