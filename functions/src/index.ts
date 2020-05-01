@@ -103,13 +103,20 @@ export const convertObject = functions.https.onRequest((req, res) => {
                 if (objectType == ObjectType.playlist){
                     applePlaylistToUniversal(id, spotifyToken)
                     .then((universalPlaylist:UniversalPlaylist) =>{
-                        storeUniversalPlaylist(universalPlaylist)
-                        .then( (docId:any) => {
-                            universalPlaylist.id = docId
-                            res.status(200).send(universalPlaylist)
+                        universalPlaylist.updateColor()
+                        .then(()=>{
+                            storeUniversalPlaylist(universalPlaylist)
+                            .then( (docId:any) => {
+                                universalPlaylist.id = docId
+                                res.status(200).send(universalPlaylist)
+                            })
+                            .catch((error:Error) =>{
+                                res.status(400).send(error)
+                            })
                         })
                         .catch((error:Error) =>{
-                            res.status(400).send(error)
+                            console.log(error)
+                            res.status(500).send(error)
                         })
                     })
                     .catch((error:Error) =>{
