@@ -42,13 +42,17 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
                 searchAppleTrack(spotifyTrack.baseTrack())
                 .then((appleTrack:AppleTrack) => {
                     let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                    storeUniversalTrack(universalTrack)
-                    .then(() =>{
+                    
+                    universalTrack.updateColor()
+                    .then(()=>{
+                        storeUniversalTrack(universalTrack)
                         resolve(universalTrack)
                     })
                     .catch((error:Error)=>{
-                        console.log(error)
+                        reject(error)
                     })
+                    
+                    
                 }).catch((error:Error) =>{
                     console.log(error)
                     reject(error)
