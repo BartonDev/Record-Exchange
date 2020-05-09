@@ -26,6 +26,38 @@ export function storeUniversalTrack (track: UniversalTrack): any {
     })
 }
 
+export function frugalStoreUniversalTrack(track: UniversalTrack): any {
+    if (!admin.apps.length) {
+        admin.initializeApp();
+    } 
+
+    return new Promise (function (resolve, reject) {
+        admin.firestore().collection("tracks").doc(track.id).get()
+        .then(function(doc:any) {
+            if (!doc.exists) {
+                admin.firestore().collection("tracks").doc(track.id).set(track.toFirestoreData())
+                .then(function() {
+                    resolve()
+                })
+                .catch(function(error) {
+                    reject(error)
+                });
+            } else {
+                resolve()
+            }
+        })
+        .catch((error:Error) =>{
+            admin.firestore().collection("tracks").doc(track.id).set(track.toFirestoreData())
+            .then(function() {
+                resolve()
+            })
+            .catch(function(error) {
+                reject(error)
+            });
+        })
+    })
+}
+
 export function storeUniversalTracks (tracks: Array<UniversalTrack>): any {
     if (!admin.apps.length) {
         admin.initializeApp();
@@ -37,22 +69,11 @@ export function storeUniversalTracks (tracks: Array<UniversalTrack>): any {
     
         for (let track of tracks){
             let storagePromise = new Promise (function(resolve, reject) {
-                admin.firestore().collection("tracks").doc(track.id).get()
-                .then(function(doc:any) {
-                    if (!doc.exists) {
-                        storeUniversalTrack(track)
-                        .then(()=>{
-                            resolve()
-                        })
-                        .catch((error:Error)=>{
-                            reject(error)
-                        })
-                    }
-                    else {
-                        resolve()
-                    }
+                storeUniversalTrack(track)
+                .then(()=>{
+                    resolve()
                 })
-                .catch((error:Error) =>{
+                .catch((error:Error)=>{
                     reject(error)
                 })
             })

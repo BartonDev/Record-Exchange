@@ -42,17 +42,11 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
                 searchAppleTrack(spotifyTrack.baseTrack())
                 .then((appleTrack:AppleTrack) => {
                     let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                    
                     universalTrack.updateColor()
                     .then(()=>{
                         storeUniversalTrack(universalTrack)
                         resolve(universalTrack)
                     })
-                    .catch((error:Error)=>{
-                        reject(error)
-                    })
-                    
-                    
                 }).catch((error:Error) =>{
                     console.log(error)
                     reject(error)
@@ -89,11 +83,9 @@ export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any
                 .then((spotifyTrack:SpotifyTrack) =>{
                     let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
                     storeUniversalTrack(universalTrack)
-                    .then(() =>{
+                    universalTrack.updateColor()
+                    .then(()=>{
                         resolve(universalTrack)
-                    })
-                    .catch((error:Error)=>{
-                        console.log(error)
                     })
                 }).catch((error:Error) =>{
                     reject(error)
@@ -118,7 +110,11 @@ export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):a
             .then((appleAlbum:AppleAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
                 storeUniversalAlbum(universalAlbum)
-                resolve(universalAlbum)
+                universalAlbum.updateColor()
+                .then(()=>{
+                    resolve(universalAlbum)
+                })
+                
             })
             .catch((error:any)=>{
                 console.log(error)
@@ -138,7 +134,10 @@ export function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any
             .then((spotifyAlbum: SpotifyAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
                 storeUniversalAlbum(universalAlbum)
-                resolve(universalAlbum)
+                universalAlbum.updateColor()
+                .then(()=>{
+                    resolve(universalAlbum)
+                })
                 
             })
             .catch((error:any)=>{
@@ -163,12 +162,9 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
                     searchAppleTrack(spotifyTrack.baseTrack())
                     .then((appleTrack:AppleTrack) => {
                         let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                        // universalTrack.updateColor()
-                        // .then(()=>{
-                            // console.log(universalTrack)
-                        storeUniversalTrack(universalTrack)
-                        .catch((error:Error) =>{
-                            console.log(error)
+                        universalTrack.updateColor()
+                        .then(()=>{
+                            storeUniversalTrack(universalTrack)
                         })
 
                         if (universalTracks.length > index){
@@ -179,18 +175,20 @@ export function spotifyPlaylistToUniversal (playlistId: string, token: SpotifyTo
                         fullfilledPromises += 1
                         if (fullfilledPromises == goalPromises){
                             let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                            resolve(universalPlaylist)
+                            universalPlaylist.updateColor()
+                            .then(()=>{
+                                resolve(universalPlaylist)
+                            })
                         }
-                        // })
-                        // .catch((error:Error)=>{
-                        //     reject(error)
-                        // })
                     })
                     .catch( (error:Error) => {
                         fullfilledPromises += 1
                         if (fullfilledPromises == goalPromises){
                             let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                            resolve(universalPlaylist)
+                            universalPlaylist.updateColor()
+                            .then(()=>{
+                                resolve(universalPlaylist)
+                            })
                         }
                     })
                 }, (100 * index));
@@ -218,25 +216,25 @@ export function applePlaylistToUniversal (playlistId: string, token: SpotifyToke
                     universalTrack.updateColor()
                     .then(()=>{
                         storeUniversalTrack(universalTrack)
-                        .catch((error:Error) =>{
-                            console.log(error)
-                        })
-                        universalTracks.push(universalTrack)
-                        fullfilledPromises += 1
-                        if (fullfilledPromises == goalPromises){
-                            let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                    })
+                    universalTracks.push(universalTrack)
+                    fullfilledPromises += 1
+                    if (fullfilledPromises == goalPromises){
+                        let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
+                        universalPlaylist.updateColor()
+                        .then(()=>{
                             resolve(universalPlaylist)
-                        }
-                    })
-                    .catch((error:Error)=>{
-                        reject(error)
-                    })
+                        })
+                    }
                 })
                 .catch( (error:Error) => {
                     fullfilledPromises += 1
                     if (fullfilledPromises == goalPromises){
                         let universalPlaylist = new UniversalPlaylist(playlist, universalTracks)
-                        resolve(universalPlaylist)
+                        universalPlaylist.updateColor()
+                        .then(()=>{
+                            resolve(universalPlaylist)
+                        })
                     }
                 })
                 

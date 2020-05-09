@@ -58,20 +58,14 @@ export const convertObject = functions.https.onRequest((req, res) => {
                 if (objectType == ObjectType.playlist){
                     spotifyPlaylistToUniversal(id, spotifyToken)
                     .then((universalPlaylist:UniversalPlaylist) =>{
-                        universalPlaylist.updateColor()
-                        .then(()=>{
-                            storeUniversalPlaylist(universalPlaylist)
-                            .then( (docId:any) => {
-                                universalPlaylist.id = docId
-                                res.status(200).send(universalPlaylist)
-                            })
-                            .catch((error:Error) =>{
-                                res.status(400).send(error)
-                            })
-                        }).catch((error:Error) =>{
-                            res.status(400).send(error)
+                        storeUniversalPlaylist(universalPlaylist)
+                        .then( (docId:any) => {
+                            universalPlaylist.id = docId
+                            res.status(200).send(universalPlaylist)
                         })
-                        
+                        .catch((error:Error) =>{
+                            res.status(400).send(error)
+                        })   
                     })
                     .catch((error:Error) =>{
                         console.log(error)
@@ -103,20 +97,13 @@ export const convertObject = functions.https.onRequest((req, res) => {
                 if (objectType == ObjectType.playlist){
                     applePlaylistToUniversal(id, spotifyToken)
                     .then((universalPlaylist:UniversalPlaylist) =>{
-                        universalPlaylist.updateColor()
-                        .then(()=>{
-                            storeUniversalPlaylist(universalPlaylist)
-                            .then( (docId:any) => {
-                                universalPlaylist.id = docId
-                                res.status(200).send(universalPlaylist)
-                            })
-                            .catch((error:Error) =>{
-                                res.status(400).send(error)
-                            })
+                        storeUniversalPlaylist(universalPlaylist)
+                        .then( (docId:any) => {
+                            universalPlaylist.id = docId
+                            res.status(200).send(universalPlaylist)
                         })
                         .catch((error:Error) =>{
-                            console.log(error)
-                            res.status(500).send(error)
+                            res.status(400).send(error)
                         })
                     })
                     .catch((error:Error) =>{
