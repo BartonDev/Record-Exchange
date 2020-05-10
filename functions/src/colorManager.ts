@@ -3,11 +3,14 @@ const { getPaletteFromURL } = require('color-thief-node');
 
 export function getColorFromUrl (url: string): any{
     return new Promise (function(resolve, reject) {
-        getColorFromURL(url)
-        .then((color:any)=>{
-            let hex = rgbToHex(color)
-            console.log(hex)
-            resolve(hex)
+        getPaletteFromURL(url, 2, 10)
+        .then((palette:any)=>{
+            for (let color of palette){
+                if (getVibrancy(color) >= 50.0){
+                    resolve(rgbToHex(color))
+                }
+            }
+            resolve(resolve(rgbToHex(palette[0])))
         })
         .catch((error:Error)=>{
             reject(error)
@@ -15,27 +18,13 @@ export function getColorFromUrl (url: string): any{
     })
 }
 
-export function getPaletteFromUrl (url: string){
+export function getCommonColor (url: string): any{
     return new Promise (function(resolve, reject) {
-
-        // console.log(getVibrancy([255, 0, 0]))
-        // console.log(getVibrancy([0, 0, 0]))
-        // console.log(getVibrancy([255, 255, 255]))
-
-        getPaletteFromURL(url, 2, 10)
-        .then((palette:any)=>{
-
-            console.log(getVibrancy([255, 0, 0]))
-            console.log(getVibrancy([0, 0, 0]))
-            console.log(getVibrancy([255, 255, 255]))
-
-
-            for (let color of palette){
-                if (getVibrancy(color) >= 50.0){
-                    resolve(rgbToHex(color))
-                }
-            }
-            resolve(resolve(rgbToHex(palette[0])))
+        getColorFromURL(url)
+        .then((color:any)=>{
+            let hex = rgbToHex(color)
+            console.log(hex)
+            resolve(hex)
         })
         .catch((error:Error)=>{
             reject(error)
