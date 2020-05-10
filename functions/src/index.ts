@@ -30,6 +30,18 @@ const cors = require('cors')({origin:true});
 
 //Misc Functions
 
+import {getPaletteFromUrl} from  "./colorManager"
+export const test1 = functions.https.onRequest((req, res) =>{
+    const url = 'https://i.scdn.co/image/ab67616d0000b27355404f712deb84d0650a4b41'
+    getPaletteFromUrl(url)
+    .then((palette: any)=>{
+        res.send(palette)
+    })
+    .catch((error:Error)=>{
+        res.send(error)
+    })
+})
+
 export const getPreview = functions.https.onRequest((req, res)=> {
     return cors(req, res, () => {
         console.log(req)

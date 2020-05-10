@@ -1,5 +1,5 @@
 const { getColorFromURL } = require('color-thief-node');
-// const { getPaletteFromURL } = require('color-thief-node');
+const { getPaletteFromURL } = require('color-thief-node');
 
 export function getColorFromUrl (url: string): any{
     return new Promise (function(resolve, reject) {
@@ -13,6 +13,51 @@ export function getColorFromUrl (url: string): any{
             reject(error)
         });
     })
+}
+
+export function getPaletteFromUrl (url: string){
+    return new Promise (function(resolve, reject) {
+
+        // console.log(getVibrancy([255, 0, 0]))
+        // console.log(getVibrancy([0, 0, 0]))
+        // console.log(getVibrancy([255, 255, 255]))
+
+        getPaletteFromURL(url, 2, 10)
+        .then((palette:any)=>{
+
+            console.log(getVibrancy([255, 0, 0]))
+            console.log(getVibrancy([0, 0, 0]))
+            console.log(getVibrancy([255, 255, 255]))
+
+
+            for (let color of palette){
+                if (getVibrancy(color) >= 50.0){
+                    resolve(rgbToHex(color))
+                }
+            }
+            resolve(resolve(rgbToHex(palette[0])))
+        })
+        .catch((error:Error)=>{
+            reject(error)
+        });
+    })
+}
+
+function getVibrancy (colors: Array<number> ): number {
+
+    var r = colors[0];
+    var g = colors[1];
+    var b = colors[2];
+
+    if (r + g + b == 0 ){
+        return 0
+    }
+
+    let min = Math.min(r,g,b)
+    let max = Math.max(r,g,b)
+
+    let value = ((max+ min) * (max-min))/max
+    return value
 }
 
 function rgbToHex (colors:Array<number>): string{
