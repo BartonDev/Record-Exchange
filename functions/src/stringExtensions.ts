@@ -12,6 +12,10 @@ export function sanitizeStringComplex (string: string): string {
     if (processedString.replace(/(\(.*?\))/i, '').trim() != ''){
         processedString = processedString.replace(/(\(.*?\))/i, '').trim()
     }
+    processedString = processedString.replace(/(- radio edit)/i, '')
+    processedString = processedString.replace(/(- radio mix)/i, '')
+    processedString = processedString.replace(/(- original mix)/i, '')
+    processedString = processedString.replace(/(- remix)/i, '')
     processedString = processedString.replace(/(- single)/i, '')
     processedString = processedString.replace(/(- ep)/i, '')
     processedString = processedString.replace(/( ep\Z)/i, '')
