@@ -66,9 +66,9 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
 
 export function searchAppleTrack(searchTrack:Track): any {
     return new Promise (function(resolve, reject) {
-
+        
         let query = createQueryUri(searchTrack.name, searchTrack.artist)
-
+        console.log("Q", query)
         const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=songs`;
         const options = {
             headers: {
@@ -89,7 +89,7 @@ export function searchAppleTrack(searchTrack:Track): any {
                 let comparisonTrack = new AppleTrack(trackData)
                 let comparisonResult = searchTrack.compare(comparisonTrack)
                 let comparisonValue = comparisonResult.value
-
+                console.log("V", comparisonResult)
                 if (comparisonValue == 52) {
                     bestMatch = comparisonTrack
                     break

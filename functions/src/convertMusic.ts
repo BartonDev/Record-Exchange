@@ -1,13 +1,13 @@
 import {Spotify, Apple} from "./apiInterfaces"
 import {SpotifyToken} from "./SpotifyTokenManager"
-import {ServiceType} from "./musicEnums"
+// import {ServiceType} from "./musicEnums"
 
-import {AppleTrack, SpotifyTrack, UniversalTrack, FirestoreUniversalTrack} from "./musicObjects"
+import {AppleTrack, SpotifyTrack, UniversalTrack} from "./musicObjects"
 import {SpotifyAlbum, AppleAlbum, UniversalAlbum} from "./musicObjects"
 import {ApplePlaylist, SpotifyPlaylist, UniversalPlaylist} from "./musicObjects"
 
 import {storeUniversalTrack, storeUniversalAlbum} from "./firestoreManager"
-import {fetchTrackFirestore} from "./firestoreManager"
+// import {fetchTrackFirestore} from "./firestoreManager"
 
 import {searchSpotifyTrack, searchAppleTrack, searchSpotifyAlbum, searchAppleAlbum} from "./apiManager"
 import {getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
@@ -21,80 +21,80 @@ const fetch = require('cross-fetch')
 export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
 
-        fetchTrackFirestore(trackId, ServiceType.spotify)
-        .then((universalTrack: FirestoreUniversalTrack) => {
-            resolve(universalTrack)
-        })
-        .catch(()=>{
-            const url = `https://api.spotify.com/v1/tracks/${trackId}`
-            const options = {
-                headers: {
-                    Authorization: token.token
-                }
-            };
-        
-            fetch (url, options)
-            .then( (res:any) => res.json())
-            .then( (data:any) => {
-                let parsedData = <Spotify.TrackAttributes> data
-                let spotifyTrack = new SpotifyTrack(parsedData)
+        // fetchTrackFirestore(trackId, ServiceType.spotify)
+        // .then((universalTrack: FirestoreUniversalTrack) => {
+        //     resolve(universalTrack)
+        // })
+        // .catch(()=>{
+        const url = `https://api.spotify.com/v1/tracks/${trackId}`
+        const options = {
+            headers: {
+                Authorization: token.token
+            }
+        };
+    
+        fetch (url, options)
+        .then( (res:any) => res.json())
+        .then( (data:any) => {
+            let parsedData = <Spotify.TrackAttributes> data
+            let spotifyTrack = new SpotifyTrack(parsedData)
 
-                searchAppleTrack(spotifyTrack.baseTrack())
-                .then((appleTrack:AppleTrack) => {
-                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                    universalTrack.updateColor()
-                    .then(()=>{
-                        storeUniversalTrack(universalTrack)
-                        resolve(universalTrack)
-                    })
-                }).catch((error:Error) =>{
-                    console.log(error)
-                    reject(error)
+            searchAppleTrack(spotifyTrack.baseTrack())
+            .then((appleTrack:AppleTrack) => {
+                let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                universalTrack.updateColor()
+                .then(()=>{
+                    storeUniversalTrack(universalTrack)
+                    resolve(universalTrack)
                 })
-            }).catch((error:Error) => {
+            }).catch((error:Error) =>{
                 console.log(error)
                 reject(error)
-            });
-        })
+            })
+        }).catch((error:Error) => {
+            console.log(error)
+            reject(error)
+        });
     })
+    // })
 }
 
 export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any {
     return new Promise(function(resolve, reject) {
-        fetchTrackFirestore(trackId, ServiceType.apple)
-        .then((universalTrack: FirestoreUniversalTrack) => {
-            resolve(universalTrack)
-        })
-        .catch(()=>{
-            const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
-            const options = {
-                headers: {
-                    Authorization: `Bearer ${APPLE_TOKEN}`
-                }
-            };
-            
-            fetch (url, options)
-            .then( (res:any) => res.json())
-            .then( (data:any) => {
-                let parsedResponse = <Apple.Tracks>data
-                let appleTrack = new AppleTrack(parsedResponse.data[0])
+        // fetchTrackFirestore(trackId, ServiceType.apple)
+        // .then((universalTrack: FirestoreUniversalTrack) => {
+        //     resolve(universalTrack)
+        // })
+        // .catch(()=>{
+        const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
+        const options = {
+            headers: {
+                Authorization: `Bearer ${APPLE_TOKEN}`
+            }
+        };
+        
+        fetch (url, options)
+        .then( (res:any) => res.json())
+        .then( (data:any) => {
+            let parsedResponse = <Apple.Tracks>data
+            let appleTrack = new AppleTrack(parsedResponse.data[0])
 
-                searchSpotifyTrack(appleTrack.baseTrack(), token)
-                .then((spotifyTrack:SpotifyTrack) =>{
-                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                    storeUniversalTrack(universalTrack)
-                    universalTrack.updateColor()
-                    .then(()=>{
-                        resolve(universalTrack)
-                    })
-                }).catch((error:Error) =>{
-                    reject(error)
+            searchSpotifyTrack(appleTrack.baseTrack(), token)
+            .then((spotifyTrack:SpotifyTrack) =>{
+                let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                storeUniversalTrack(universalTrack)
+                universalTrack.updateColor()
+                .then(()=>{
+                    resolve(universalTrack)
                 })
-            }).catch((error:Error) => {
-                console.log(error)
+            }).catch((error:Error) =>{
                 reject(error)
-            });
-        })
+            })
+        }).catch((error:Error) => {
+            console.log(error)
+            reject(error)
+        });
+        // })
 
 
 
