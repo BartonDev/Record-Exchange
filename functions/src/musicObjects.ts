@@ -52,13 +52,13 @@ export class Track {
         if (name1 == name2){
             nameResult = MatchValue.match
         } else {
-            name1 = sanitizeStringComplex(name1)
-            name2 = sanitizeStringComplex(name2)
-            if (name1 == name2){
+            var name1Complex = sanitizeStringComplex(this.name)
+            var name2Complex = sanitizeStringComplex(comparisonTrack.name)
+            if (name1Complex == name2Complex){
                 nameResult = MatchValue.match
-            } else if (name1.length >= name2.length && name1.includes(name2)){
+            } else if (name1Complex.length >= name2Complex.length && name1Complex.includes(name2Complex)){
                 nameResult = MatchValue.similar
-            } else if (name2.length > name1.length && name2.includes(name1)){
+            } else if (name2Complex.length > name1Complex.length && name2Complex.includes(name1Complex)){
                 nameResult = MatchValue.similar
             } else {
                 nameResult = MatchValue.different

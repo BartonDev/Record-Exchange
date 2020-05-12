@@ -96,7 +96,6 @@ function tracksToUrisSpotify (tracks: Array<UniversalTrack>):Array<string> {
 
 //TODO hard limit on 100 tracks at a time, need something recursive to handle 100+ tracks
 function addTracksToPlaylistSpotify (authCode: string, playlistId: string, uris: Array<string>): any {
-    console.log("playlist ID: ", playlistId)
     const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`
 
     let data = {
