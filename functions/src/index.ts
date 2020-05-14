@@ -190,21 +190,27 @@ export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
 })
 
 export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
-    res.set('Access-Control-Allow-Origin', 'http://localhost:3000/');
-    res.set('Access-Control-Allow-Credentials', 'true');
+    res.set('Access-Control-Allow-Origin', '*');
 
-    return cors(req, res, () => {
-        let authCode = req.body.authorizationCode
-        let playlist = new JsonUniversalPlaylist(req.body.playlistData)
-        addPlaylistToLibrarySpotify(authCode, playlist)
-        .then(()=>{
-            res.status(200).send()
+    if (req.method === 'OPTIONS') {
+      res.set('Access-Control-Allow-Methods', 'GET');
+      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      res.set('Access-Control-Max-Age', '3600');
+      res.status(204).send('');
+    } else {
+        return cors(req, res, () => {
+            let authCode = req.body.authorizationCode
+            let playlist = new JsonUniversalPlaylist(req.body.playlistData)
+            addPlaylistToLibrarySpotify(authCode, playlist)
+            .then(()=>{
+                res.status(200).send()
+            })
+            .catch((error:Error) =>{
+                console.log(error)
+                res.status(400).send(error)
+            })
         })
-        .catch((error:Error) =>{
-            console.log(error)
-            res.status(400).send(error)
-        })
-    })
+    }
 })
 
 //Apple 
@@ -213,20 +219,13 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     res.set('Access-Control-Allow-Origin', '*');
 
     if (req.method === 'OPTIONS') {
-      // Send response to OPTIONS requests
-      console.log("AHAHAHAHAHAHHHAHAHAHH")
       res.set('Access-Control-Allow-Methods', 'GET');
       res.set('Access-Control-Allow-Headers', 'Content-Type');
       res.set('Access-Control-Max-Age', '3600');
       res.status(204).send('');
-      
     } else {
-        console.log("whatver")
         return cors(req, res, () => {
-       
-    
             let userToken = req.body.userToken
-            console.log("Q, req", JSON.stringify(req.body.playlistData))
             let playlist = new JsonUniversalPlaylist(JSON.stringify(req.body.playlistData))
     
             addPlaylistToLibraryApple(playlist, userToken)
@@ -239,8 +238,6 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
             })
         })
     }
-
-   
 })
 
 exports.getPreviewIOS = functions.https.onCall((data, context) => {
