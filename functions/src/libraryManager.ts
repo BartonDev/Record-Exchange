@@ -183,7 +183,7 @@ export function addPlaylistToLibraryApple (playlist: UniversalPlaylist, userToke
         };
     
         fetch(url, options)
-        .then( (res:any) => res.JSON())
+        // .then( (res:any) => res.JSON())
         .then( (data:any) => {
             console.log("return", data)
         })

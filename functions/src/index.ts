@@ -16,13 +16,14 @@ import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} 
 import {getObjectPreview} from "./getPreview"
 
 import {addPlaylistToLibrarySpotify, addPlaylistToLibraryApple} from "./libraryManager"
-import {getColorFromUrl} from "./colorManager"
+// import {getColorFromUrl} from "./colorManager"
 
 // import { app } from 'firebase-admin';
 // import { user } from 'firebase-functions/lib/providers/auth';
 
 // const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
+
 // const axios = require('axios')
 
 
@@ -189,6 +190,9 @@ export const getSpotifyAuthUrl = functions.https.onRequest((req, res) =>{
 })
 
 export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
+    res.set('Access-Control-Allow-Origin', 'http://localhost:3000/');
+    res.set('Access-Control-Allow-Credentials', 'true');
+
     return cors(req, res, () => {
         let authCode = req.body.authorizationCode
         let playlist = new JsonUniversalPlaylist(req.body.playlistData)
@@ -206,19 +210,37 @@ export const addPlaylistToSpotify = functions.https.onRequest((req, res) =>{
 //Apple 
 
 export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
-    return cors(req, res, () => {
-        let userToken = req.body.userToken
-        let playlist = new JsonUniversalPlaylist(req.body.playlistData)
+    res.set('Access-Control-Allow-Origin', '*');
 
-        addPlaylistToLibraryApple(playlist, userToken)
-        .then(()=>{
-            res.status(200).send()
+    if (req.method === 'OPTIONS') {
+      // Send response to OPTIONS requests
+      console.log("AHAHAHAHAHAHHHAHAHAHH")
+      res.set('Access-Control-Allow-Methods', 'GET');
+      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      res.set('Access-Control-Max-Age', '3600');
+      res.status(204).send('');
+      
+    } else {
+        console.log("whatver")
+        return cors(req, res, () => {
+       
+    
+            let userToken = req.body.userToken
+            console.log("Q, req", JSON.stringify(req.body.playlistData))
+            let playlist = new JsonUniversalPlaylist(JSON.stringify(req.body.playlistData))
+    
+            addPlaylistToLibraryApple(playlist, userToken)
+            .then(()=>{
+                res.status(200).send()
+            })
+            .catch((error:Error) =>{
+                console.log(error)
+                res.status(400).send(error)
+            })
         })
-        .catch((error:Error) =>{
-            console.log(error)
-            res.status(400).send(error)
-        })
-    })
+    }
+
+   
 })
 
 exports.getPreviewIOS = functions.https.onCall((data, context) => {
@@ -236,12 +258,12 @@ exports.getPreviewIOS = functions.https.onCall((data, context) => {
     })
 });
 
-export const test = functions.https.onRequest((req, res) =>{
-    getColorFromUrl('https://i.scdn.co/image/ab67616d0000b273661d019f34569f79eae9e985')
-    .then((res:any)=>{
-        res.send(res)
-    })
-    .catch((error:Error) =>{   
-        res.send(error)
-    })
-})
+// export const test = functions.https.onRequest((req, res) =>{
+//     getColorFromUrl('https://i.scdn.co/image/ab67616d0000b273661d019f34569f79eae9e985')
+//     .then((res:any)=>{
+//         res.send(res)
+//     })
+//     .catch((error:Error) =>{   
+//         res.send(error)
+//     })
+// })
