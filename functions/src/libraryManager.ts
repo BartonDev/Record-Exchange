@@ -186,9 +186,11 @@ export function addPlaylistToLibraryApple (playlist: UniversalPlaylist, userToke
         // .then( (res:any) => res.JSON())
         .then( (data:any) => {
             console.log("return", data)
+            resolve()
         })
         .catch((error:Error) => {
             console.log("error", error)
+            reject()
         })
     })
 

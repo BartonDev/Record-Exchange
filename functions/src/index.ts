@@ -230,6 +230,7 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     
             addPlaylistToLibraryApple(playlist, userToken)
             .then(()=>{
+                console.log("send")
                 res.status(200).send()
             })
             .catch((error:Error) =>{
