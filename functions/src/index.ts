@@ -53,10 +53,8 @@ export const convertObject = functions.https.onRequest((req, res) => {
         let serviceType = req.body.serviceType
         let objectType = req.body.objectType
         let id = req.body.id 
-        console.log("test")
         getSpotifyToken()
         .then((spotifyToken:SpotifyToken) =>{
-            console.log("test0")
             if (serviceType == ServiceType.spotify) {
                 if (objectType == ObjectType.playlist){
                     spotifyPlaylistToUniversal(id, spotifyToken)

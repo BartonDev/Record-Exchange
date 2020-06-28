@@ -403,10 +403,8 @@ export class Album {
 
     updateColor():any{
         return new Promise((resolve, reject) => {
-            console.log("TEST11")
             getColorFromUrl(this.coverImage)
             .then((color:string) => {
-                console.log("TEST12")
                 this.color = color
                 resolve()
             })

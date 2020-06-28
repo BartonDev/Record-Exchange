@@ -183,8 +183,6 @@ export function searchAppleAlbum (searchAlbum:Album):any{
     
         fetch(url, options)
         .then( (res:any) => {
-            console.log("TEST21")
-            console.log(res)
             return res.json()
         })
         .then( (data:any) => {
