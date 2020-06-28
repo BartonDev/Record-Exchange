@@ -1,17 +1,11 @@
 import {Spotify, Apple} from "./apiInterfaces"
 import {SpotifyToken} from "./SpotifyTokenManager"
-// import {ServiceType} from "./musicEnums"
-
 import {AppleTrack, SpotifyTrack, UniversalTrack} from "./musicObjects"
 import {SpotifyAlbum, AppleAlbum, UniversalAlbum} from "./musicObjects"
 import {ApplePlaylist, SpotifyPlaylist, UniversalPlaylist} from "./musicObjects"
-
 import {storeUniversalTrack, storeUniversalAlbum} from "./firestoreManager"
-// import {fetchTrackFirestore} from "./firestoreManager"
-
 import {searchSpotifyTrack, searchAppleTrack, searchSpotifyAlbum, searchAppleAlbum} from "./apiManager"
 import {getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
-
 import {APPLE_TOKEN} from "./credentials"
 
 const fetch = require('cross-fetch')
@@ -20,12 +14,6 @@ const fetch = require('cross-fetch')
 
 export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): any {
     return new Promise (function(resolve, reject) {
-
-        // fetchTrackFirestore(trackId, ServiceType.spotify)
-        // .then((universalTrack: FirestoreUniversalTrack) => {
-        //     resolve(universalTrack)
-        // })
-        // .catch(()=>{
         const url = `https://api.spotify.com/v1/tracks/${trackId}`
         const options = {
             headers: {
@@ -56,16 +44,10 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
             reject(error)
         });
     })
-    // })
 }
 
 export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any {
     return new Promise(function(resolve, reject) {
-        // fetchTrackFirestore(trackId, ServiceType.apple)
-        // .then((universalTrack: FirestoreUniversalTrack) => {
-        //     resolve(universalTrack)
-        // })
-        // .catch(()=>{
         const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
         const options = {
             headers: {
@@ -94,10 +76,6 @@ export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any
             console.log(error)
             reject(error)
         });
-        // })
-
-
-
     })
 }
 

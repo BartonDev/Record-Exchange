@@ -1,40 +1,25 @@
 import * as functions from 'firebase-functions';
-
 import {SpotifyToken, getSpotifyToken, getSpotifyAuthCodeUrl} from "./SpotifyTokenManager"
 import {ServiceType, ObjectType} from "./musicEnums"
-
 import {UniversalTrack} from "./musicObjects"
 import {UniversalAlbum} from "./musicObjects"
 import {UniversalPlaylist, JsonUniversalPlaylist} from "./musicObjects"
-
 import {fetchPlaylistFirestore, fetchAlbumFirestore, fetchTrackFirestore} from "./firestoreManager"
 import {storeUniversalPlaylist} from "./firestoreManager"
-
 import {spotifyTrackToUniversal, spotifyAlbumToUniversal, spotifyPlaylistToUniversal} from "./convertMusic"
 import {appleTrackToUniversal, appleAlbumToUniversal, applePlaylistToUniversal} from "./convertMusic"
-
 import {getObjectPreview} from "./getPreview"
-
 import {addPlaylistToLibrarySpotify, addPlaylistToLibraryApple} from "./libraryManager"
-// import {getColorFromUrl} from "./colorManager"
 
 // import { app } from 'firebase-admin';
 // import { user } from 'firebase-functions/lib/providers/auth';
 
-// const fetch = require('cross-fetch')
 const cors = require('cors')({origin:true});
-
-// const axios = require('axios')
-
-
-//TODO: Unique Errors for different cases  -  (Music Not Found Error)
 
 //Misc Functions
 
-
 export const getPreview = functions.https.onRequest((req, res)=> {
     return cors(req, res, () => {
-        console.log(req)
         let serviceType = req.body.serviceType
         let objectType = req.body.objectType
         let id = req.body.id 
@@ -73,13 +58,11 @@ export const convertObject = functions.https.onRequest((req, res) => {
                         res.status(500).send(error)
                     })
                 } else if (objectType == ObjectType.album){
-                    console.log("Test00")
                     spotifyAlbumToUniversal(id, spotifyToken)
                     .then((universalAlbum:UniversalAlbum)=>{
                         res.status(200).send(universalAlbum)
                     })
                     .catch((error:Error)=>{
-                        console.log("Test55")
                         console.log(error)
                         res.status(400).send(error)
                     })
@@ -231,7 +214,6 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
     
             addPlaylistToLibraryApple(playlist, userToken)
             .then(()=>{
-                console.log("send")
                 res.status(200).send()
             })
             .catch((error:Error) =>{
@@ -241,6 +223,8 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
         })
     }
 })
+
+//Functions for iOS App - on hold
 
 exports.getPreviewIOS = functions.https.onCall((data, context) => {
     let serviceType = data.serviceType
@@ -256,13 +240,3 @@ exports.getPreviewIOS = functions.https.onCall((data, context) => {
         })
     })
 });
-
-// export const test = functions.https.onRequest((req, res) =>{
-//     getColorFromUrl('https://i.scdn.co/image/ab67616d0000b273661d019f34569f79eae9e985')
-//     .then((res:any)=>{
-//         res.send(res)
-//     })
-//     .catch((error:Error) =>{   
-//         res.send(error)
-//     })
-// })

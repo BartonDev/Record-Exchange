@@ -1,13 +1,9 @@
 import {SpotifyToken, getSpotifyToken} from "./SpotifyTokenManager"
 import {ServiceType, ObjectType} from "./musicEnums"
-
 import {AppleTrack, SpotifyTrack} from "./musicObjects"
 import {SpotifyAlbum, AppleAlbum} from "./musicObjects"
 import {ApplePlaylist, SpotifyPlaylist} from "./musicObjects"
-
 import {getSpotifyTrack, getAppleTrack, getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
-
-// import {getColorFromUrl} from "./colorManager"
 
 export function getObjectPreview (serviceType: string, objectType: string, id: string):any{
     return new Promise (function (resolve, reject) {

@@ -39,7 +39,7 @@ export function getSpotifyToken (): any {
 export function getSpotifyAuthCodeUrl (): string {
     const clientId = SPOTIFY_CLIENT_ID;
     const redirectUri = 'http://recordExchange.app/spotifyCallback'; 
-    const state = "abcdefg";
+    const state = "";
     const scope = 'user-read-private playlist-modify-private';
 
     var url = 'https://accounts.spotify.com/authorize';

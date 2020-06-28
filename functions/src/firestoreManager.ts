@@ -3,11 +3,6 @@ import {Firestore} from "./apiInterfaces"
 import {ServiceType} from "./musicEnums"
 import {UniversalTrack, FirestoreUniversalTrack, UniversalAlbum, UniversalPlaylist} from "./musicObjects"
 
-//TODO: 
-// Currently setting document without pre-checking its existence.
-// could save on writes if we do a read before hand, may take longer 
-// but if we're storing documents asynchronous it shouldnt matter 
-
 //STORE
 
 export function storeUniversalTrack (track: UniversalTrack): any {
@@ -100,13 +95,6 @@ export function storeUniversalAlbum(album: UniversalAlbum):any {
 
     let tracksPromise = new Promise (function(resolve, reject) {
         resolve()
-        // storeUniversalTracks(album.tracks)
-        // .then(()=>{
-        //     resolve()
-        // })
-        // .catch((error:Error) =>{
-        //     reject(error)
-        // })
     })
 
     let albumPromise = new Promise (function(resolve, reject){

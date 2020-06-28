@@ -2,10 +2,8 @@ import { IdHash } from "./idHash"
 import {Spotify, Apple, Firestore} from "./apiInterfaces"
 import {ObjectType} from "./musicEnums"
 import {msToStandard, sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
-// import { app } from "firebase-admin"
-
 import {getColorFromUrl} from "./colorManager"
-
+// import { app } from "firebase-admin"
 
 export enum MatchValue {different, similar, match}
 
@@ -18,7 +16,6 @@ export class ComparisonResult {
         this.nameResult = nameResult
         this.artistResult = artistResult
         this.albumResult = albumResult
-
         this.value = nameResult * 15 + artistResult * 10 + albumResult * 1
     }
 }
@@ -120,7 +117,6 @@ export class AppleTrack extends Track{
     link: string;
 
     constructor(data: Apple.TrackData){
-        console.log("data", data)
         let name = data.attributes.name
         let artist = data.attributes.artistName
         let album = data.attributes.albumName
@@ -135,7 +131,6 @@ export class AppleTrack extends Track{
         this.id = data.id
         this.genres = data.attributes.genreNames
         this.link = data.attributes.url
-        // if data.attributes.li
     }
 }
 
@@ -150,7 +145,6 @@ export class SpotifyTrack extends Track {
         let duration =  msToStandard(data.duration_ms)
         let preview = data.preview_url
         super(name, artist, album, coverImage, duration, preview)
-
         this.id = data.id
     }
 }
@@ -165,7 +159,6 @@ export class SpotifyAlbumTrack extends Track implements SpotifyTrack {
         let album = albumName
         let coverImage = albumCover
         let duration =  msToStandard(data.duration_ms)
-        //TODO
         let preview = ""
         super(name, artist, album, coverImage, duration, preview)
 
@@ -485,12 +478,9 @@ export class UniversalAlbum extends Album {
 
         this.spotifyId = spotifyAlbum.id,
         this.appleId = appleAlbum.id
-        
         this.genres = appleAlbum.genres
-
         this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.album)
-
-        // :/
+        
         let appleTracks = appleAlbum.tracks
         let universalTracks = Array<UniversalTrack>()
         
@@ -697,7 +687,6 @@ export class UniversalPlaylist extends Playlist{
         }
 
         return ({
-            
             name: this.name,
             description: this.description,
             coverImage: this.coverImage,
@@ -802,8 +791,3 @@ export class JsonUniversalPlaylist extends Playlist implements UniversalPlaylist
         })
     }
 }
-
-
-
-
-

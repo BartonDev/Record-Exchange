@@ -1,7 +1,6 @@
 import {UniversalTrack, UniversalPlaylist} from "./musicObjects"
 import { APPLE_TOKEN } from './credentials';
 
-
 const fetch = require('cross-fetch')
 
 //SPOTIFY
@@ -113,7 +112,6 @@ function addTracksToPlaylistSpotify (authCode: string, playlistId: string, uris:
     fetch(url, options)
     .then( (res:any) => res.json())
     .then( (data:any) => {
-        console.log("return", data)
     })
     .catch((error:Error) => {
         console.log("error", error)
@@ -181,9 +179,7 @@ export function addPlaylistToLibraryApple (playlist: UniversalPlaylist, userToke
         };
     
         fetch(url, options)
-        // .then( (res:any) => res.JSON())
         .then( (data:any) => {
-            console.log("return", data)
             resolve()
         })
         .catch((error:Error) => {
