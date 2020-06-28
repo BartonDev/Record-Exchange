@@ -99,13 +99,14 @@ export function storeUniversalAlbum(album: UniversalAlbum):any {
     }
 
     let tracksPromise = new Promise (function(resolve, reject) {
-        storeUniversalTracks(album.tracks)
-        .then(()=>{
-            resolve()
-        })
-        .catch((error:Error) =>{
-            reject(error)
-        })
+        resolve()
+        // storeUniversalTracks(album.tracks)
+        // .then(()=>{
+        //     resolve()
+        // })
+        // .catch((error:Error) =>{
+        //     reject(error)
+        // })
     })
 
     let albumPromise = new Promise (function(resolve, reject){

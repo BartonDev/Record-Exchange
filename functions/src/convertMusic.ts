@@ -103,15 +103,19 @@ export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any
 
 export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):any{
     return new Promise (function(resolve, reject) {
-
+        console.log("TEST1")
         getSpotifyAlbum(albumId, token)
         .then((spotifyAlbum:SpotifyAlbum) =>{
+            console.log("TEST2")
             searchAppleAlbum(spotifyAlbum.baseAlbum())
             .then((appleAlbum:AppleAlbum)=>{
+                console.log("TEST3")
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
-                storeUniversalAlbum(universalAlbum)
                 universalAlbum.updateColor()
                 .then(()=>{
+                    console.log("TEST3")
+                    console.log(universalAlbum)
+                    storeUniversalAlbum(universalAlbum)
                     resolve(universalAlbum)
                 })
                 
@@ -121,6 +125,7 @@ export function spotifyAlbumToUniversal (albumId: string, token: SpotifyToken):a
             })
         })
         .catch((error:Error)=>{
+            console.log(error)
             reject(error)     
         })
     })
@@ -133,9 +138,9 @@ export function appleAlbumToUniversal (albumId: string, token: SpotifyToken):any
             searchSpotifyAlbum(appleAlbum.baseAlbum(), token)
             .then((spotifyAlbum: SpotifyAlbum)=>{
                 let universalAlbum = new UniversalAlbum(spotifyAlbum, appleAlbum)
-                storeUniversalAlbum(universalAlbum)
                 universalAlbum.updateColor()
                 .then(()=>{
+                    storeUniversalAlbum(universalAlbum)
                     resolve(universalAlbum)
                 })
                 

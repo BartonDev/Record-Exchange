@@ -219,6 +219,46 @@ export class UniversalTrack extends Track {
     }
 }
 
+export class UniversalAlbumTrack extends Track {
+    id: string;
+    spotifyId: string;
+    appleId: string;
+    genres: string[];
+    appleLink: string;
+
+    constructor(appleTrack: AppleTrack){
+        let name = appleTrack.name
+        let artist = appleTrack.artist
+        let album = appleTrack.album
+        let coverImage = appleTrack.coverImage
+        let duration = appleTrack.duration
+        var preview = appleTrack.preview
+        super(name, artist, album, coverImage, duration, preview)
+
+        this.spotifyId = ""
+        this.appleId = appleTrack.id
+        this.genres = appleTrack.genres
+        this.appleLink = appleTrack.link
+        this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.track)
+    }
+
+    toFirestoreData(): any{
+        return ({
+            spotifyId: this.spotifyId,
+            appleId: this.appleId,
+            name: this.name,
+            artist: this.artist,
+            album: this.album,
+            coverImage: this.coverImage,
+            genres: this.genres,
+            duration: this.duration,
+            preview: this.preview,
+            appleLink: this.appleLink,
+            color: this.color,
+        })
+    }
+}
+
 export class FirestoreUniversalTrack extends Track implements UniversalTrack {
     id: string;
     spotifyId: string;
@@ -314,7 +354,8 @@ export class Album {
     coverImage: string
     color: string
 
-    constructor(name: string, artist: string, coverImage: string){
+    constructor(name: string, artist: string, coverImage: string
+        ){
         this.name = name
         this.artist = artist
         this.coverImage = coverImage
@@ -362,8 +403,10 @@ export class Album {
 
     updateColor():any{
         return new Promise((resolve, reject) => {
+            console.log("TEST11")
             getColorFromUrl(this.coverImage)
             .then((color:string) => {
+                console.log("TEST12")
                 this.color = color
                 resolve()
             })
@@ -449,18 +492,13 @@ export class UniversalAlbum extends Album {
 
         this.id = IdHash.createUniversalId(this.spotifyId, this.appleId, ObjectType.album)
 
-        //TODO: probably a cleaner way to do this
-        let spotifyTracks = spotifyAlbum.tracks
+        // :/
         let appleTracks = appleAlbum.tracks
         let universalTracks = Array<UniversalTrack>()
-        for (let spotifyTrack of spotifyTracks){
-            for (let appleTrack of appleTracks){
-                if (spotifyTrack.name.toLowerCase() == appleTrack.name.toLowerCase()){
-                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                    universalTracks.push(universalTrack)
-                    break
-                }
-            }
+        
+        for (let appleTrack of appleTracks){
+            let universalTrack = new UniversalAlbumTrack(appleTrack)
+            universalTracks.push(universalTrack)
         }
         this.tracks = universalTracks
     }
@@ -517,7 +555,7 @@ export class FirestoreUniversalAlbum extends Album implements UniversalAlbum {
         this.id = firestoreId
         this.color = data.color
 
-        //TODO: Implement [67845]
+        //TODO: ???
         let universalTracks = Array<UniversalTrack>()
         this.tracks = universalTracks
     }

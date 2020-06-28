@@ -182,7 +182,11 @@ export function searchAppleAlbum (searchAlbum:Album):any{
         };
     
         fetch(url, options)
-        .then( (res:any) => res.json())
+        .then( (res:any) => {
+            console.log("TEST21")
+            console.log(res)
+            return res.json()
+        })
         .then( (data:any) => {
             let parsedResponse = <Apple.AlbumSearchResponse> data
             var bestMatchComparisonResult: any = undefined

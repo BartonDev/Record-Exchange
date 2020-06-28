@@ -101,7 +101,14 @@ function addTracksToPlaylistSpotify (authCode: string, playlistId: string, uris:
     let data = {
         uris: uris
     }
+    console.log(uris)
+    if (uris.length > 100){
+        console.log(uris.length)
+        console.log("onehundo")
+    } else {
+        console.log(uris.length)
 
+    }
     const options = {
         method: 'POST',
         headers: {
@@ -119,7 +126,6 @@ function addTracksToPlaylistSpotify (authCode: string, playlistId: string, uris:
     .catch((error:Error) => {
         console.log("error", error)
     })
-
 }
 
 //TODO: Actually Implement
