@@ -9,26 +9,27 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "8"
+    "node": "10"
   },
   "main": "lib/index.js",
   "dependencies": {
     "axios": "^0.19.2",
     "color-thief-node": "^1.0.3",
-    "colorthief": "^2.3.0",
+    "colorthief": "^2.3.2",
     "cors": "^2.8.5",
-    "cross-fetch": "^1.0.0",
-    "firebase-admin": "^8.10.0",
-    "firebase-functions": "^3.6.0",
+    "cross-fetch": "^3.0.6",
+    "firebase-admin": "^9.4.1",
+    "firebase-functions": "^3.11.0",
     "image-js": "^0.21.9",
-    "node-vibrant": "^3.1.5",
-    "query-string": "^6.11.1",
+    "jsonwebtoken": "^8.5.1",
+    "node-vibrant": "^3.1.6",
+    "query-string": "^6.13.7",
     "request": "^2.88.2",
     "spotify-web-api-js": "^0.22.1"
   },
   "devDependencies": {
-    "typescript": "^3.2.2",
-    "firebase-functions-test": "^0.1.6"
+    "firebase-functions-test": "^0.1.6",
+    "typescript": "^3.9.7"
   },
   "private": true
 }
