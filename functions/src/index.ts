@@ -223,20 +223,3 @@ export const addPlaylistToApple = functions.https.onRequest((req, res) =>{
         })
     }
 })
-
-//Functions for iOS App - on hold
-
-exports.getPreviewIOS = functions.https.onCall((data, context) => {
-    let serviceType = data.serviceType
-    let objectType = data.objectType
-    let id = data.id 
-    return new Promise(function(resolve, reject){
-        getObjectPreview(serviceType, objectType, id)
-        .then((object:any)=>{
-            resolve(JSON.stringify(object))
-        })
-        .catch((error:Error)=>{
-            reject(error)
-        })
-    })
-});

@@ -45,10 +45,7 @@ function createSpotifyPlaylist (authCode: string, userId: string, playlist: Univ
         .then( (res:any) => res.json())
         .then( (data:any) => {
             let playlistId = data.id
-            let trackPromise = addTracksToPlaylistSpotify(authCode, playlistId, trackUris)
-            let coverImagePromise = setCoverImageSpotify(authCode, playlistId, playlist.coverImage)
-
-            Promise.all([trackPromise, coverImagePromise])
+            addTracksToPlaylistSpotify(authCode, playlistId, trackUris)
             .then( () =>{
                 resolve()
             })
@@ -115,30 +112,6 @@ function addTracksToPlaylistSpotify (authCode: string, playlistId: string, uris:
     })
     .catch((error:Error) => {
         console.log("error", error)
-    })
-}
-
-//TODO: Actually Implement
-function setCoverImageSpotify (authCode: string, playlistId: string, imageUrl: string):any {
-    return new Promise (function (resolve, reject) {
-        resolve ()
-        // const url = `https://api.spotify.com/v1/playlists/${playlistId}/images`
-        // const options = {
-        //     method: 'POST',
-        //     headers: {
-        //         Authorization: authCode,
-        //         "Content-Type": 'image/jpeg',
-        //     },
-        //     body: "IMAGE DATA HERE"
-        // };
-        
-        // fetch(url, options)
-        // .then((res:any)=>{
-        //     console.log(res)
-        // })
-        // .catch((error:Error)=>{
-        //     console.log(error)
-        // })
     })
 }
 
