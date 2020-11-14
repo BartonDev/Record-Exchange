@@ -1,5 +1,5 @@
 import {UniversalTrack, UniversalPlaylist} from "./musicObjects"
-import { APPLE_TOKEN } from './credentials';
+import {getAppleToken} from './AppleTokenManager';
 
 const fetch = require('cross-fetch')
 
@@ -146,45 +146,51 @@ function setCoverImageSpotify (authCode: string, playlistId: string, imageUrl: s
 
 export function addPlaylistToLibraryApple (playlist: UniversalPlaylist, userToken: string): any{
     return new Promise (function(resolve, reject){
-        const url = 'https://api.music.apple.com/v1/me/library/playlists'
+        getAppleToken()
+        .then((appleToken:string) =>{
+            const url = 'https://api.music.apple.com/v1/me/library/playlists'
 
-        var trackDataArray  = Array<any>()
-        for (let track of playlist.tracks){
-            let trackData = {
-                "id": track.appleId,
-                "type":"songs"
+            var trackDataArray  = Array<any>()
+            for (let track of playlist.tracks){
+                let trackData = {
+                    "id": track.appleId,
+                    "type":"songs"
+                }
+                trackDataArray.push(trackData)
             }
-            trackDataArray.push(trackData)
-        }
-        let data = {
-            "attributes":{
-               "name":playlist.name,
-               "description":playlist.description
-            },
-            "relationships":{
-               "tracks":{
-                  "data": trackDataArray
-               }
+            let data = {
+                "attributes":{
+                   "name":playlist.name,
+                   "description":playlist.description
+                },
+                "relationships":{
+                   "tracks":{
+                      "data": trackDataArray
+                   }
+                }
             }
-        }
-
-        const options = {
-            method: 'POST',
-            headers: {
-                'Music-User-Token': userToken,
-                Authorization: `Bearer ${APPLE_TOKEN}`,
-                "Content-Type": 'application/json',
-            },
-            body: JSON.stringify(data)
-        };
     
-        fetch(url, options)
-        .then( (data:any) => {
-            resolve()
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Music-User-Token': userToken,
+                    Authorization: `Bearer ${appleToken}`,
+                    "Content-Type": 'application/json',
+                },
+                body: JSON.stringify(data)
+            };
+        
+            fetch(url, options)
+            .then( (data:any) => {
+                resolve()
+            })
+            .catch((error:Error) => {
+                console.log("error", error)
+                reject()
+            })
         })
-        .catch((error:Error) => {
-            console.log("error", error)
-            reject()
+        .catch(() =>{
+            reject("Error: could not get apple token")
         })
     })
 

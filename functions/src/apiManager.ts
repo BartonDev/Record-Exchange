@@ -6,7 +6,7 @@ import {Album, SpotifyAlbum, AppleAlbum} from "./musicObjects"
 import {ApplePlaylist, SpotifyPlaylist} from "./musicObjects"
 import {sanitizeStringBasic, sanitizeStringComplex} from "./stringExtensions"
 
-import {APPLE_TOKEN} from "./credentials"
+import {getAppleToken} from './AppleTokenManager';
 
 const fetch = require('cross-fetch')
 
@@ -66,51 +66,56 @@ export function searchSpotifyTrack (searchTrack:Track, token: SpotifyToken): any
 
 export function searchAppleTrack(searchTrack:Track): any {
     return new Promise (function(resolve, reject) {
-        
-        let query = createQueryUri(searchTrack.name, searchTrack.artist)
-        const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=songs`;
-        const options = {
-            headers: {
-                Authorization: `Bearer ${APPLE_TOKEN}`
-            }
-        };
-        fetch(url, options)
-        .then( (res:any) => {
-            return res.json()
-        })
-        .then( (data:any) => {
-            let parsedResponse = <Apple.TrackSearchResponse> data
-            var bestMatch :any = undefined
-            var bestMatchComparisonResult: any = undefined
+        getAppleToken()
+        .then((appleToken:string) =>{
+            let query = createQueryUri(searchTrack.name, searchTrack.artist)
+            const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=songs`;
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${appleToken}`
+                }
+            };
+            fetch(url, options)
+            .then( (res:any) => {
+                return res.json()
+            })
+            .then( (data:any) => {
+                let parsedResponse = <Apple.TrackSearchResponse> data
+                var bestMatch :any = undefined
+                var bestMatchComparisonResult: any = undefined
 
-            for (let trackData of parsedResponse.results.songs.data){
-                let comparisonTrack = new AppleTrack(trackData)
-                let comparisonResult = searchTrack.compare(comparisonTrack)
-                let comparisonValue = comparisonResult.value
-                if (comparisonValue == 52) {
-                    bestMatch = comparisonTrack
-                    break
-                } else if (bestMatch && bestMatchComparisonResult){
-                    if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                for (let trackData of parsedResponse.results.songs.data){
+                    let comparisonTrack = new AppleTrack(trackData)
+                    let comparisonResult = searchTrack.compare(comparisonTrack)
+                    let comparisonValue = comparisonResult.value
+                    if (comparisonValue == 52) {
+                        bestMatch = comparisonTrack
+                        break
+                    } else if (bestMatch && bestMatchComparisonResult){
+                        if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                            bestMatch = comparisonTrack
+                            bestMatchComparisonResult = comparisonResult
+                        }
+
+                    } else if (comparisonValue >= 25) {
                         bestMatch = comparisonTrack
                         bestMatchComparisonResult = comparisonResult
-                    }
+                    } 
 
-                } else if (comparisonValue >= 25) {
-                    bestMatch = comparisonTrack
-                    bestMatchComparisonResult = comparisonResult
-                } 
+                }
+                if (bestMatch != undefined) {
+                    resolve(bestMatch)
+                } else{
+                    reject("TRACK NOT FOUND")
+                }
 
-            }
-            if (bestMatch != undefined) {
-                resolve(bestMatch)
-            } else{
-                reject("TRACK NOT FOUND")
-            }
-
+            })
+            .catch((error:Error) => {
+                reject(error)
+            })
         })
-        .catch((error:Error) => {
-            reject(error)
+        .catch(() =>{
+            reject("Error: could not get apple token")
         })
     })
 }
@@ -173,58 +178,64 @@ export function searchSpotifyAlbum (searchAlbum:Album, token:SpotifyToken):any {
 
 export function searchAppleAlbum (searchAlbum:Album):any{
     return new Promise (function(resolve, reject) {
-        let query = createQueryUri(searchAlbum.name, searchAlbum.artist)
-        const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=albums`;
-        const options = {
-            headers: {
-                Authorization: `Bearer ${APPLE_TOKEN}`
-            }
-        };
-    
-        fetch(url, options)
-        .then( (res:any) => {
-            return res.json()
-        })
-        .then( (data:any) => {
-            let parsedResponse = <Apple.AlbumSearchResponse> data
-            var bestMatchComparisonResult: any = undefined
-            var bestMatchId: any = undefined
+        getAppleToken()
+        .then((appleToken:string) =>{
+            let query = createQueryUri(searchAlbum.name, searchAlbum.artist)
+            const url = `https://api.music.apple.com/v1/catalog/us/search?term=${query}&limit=5&types=albums`;
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${appleToken}`
+                }
+            };
+        
+            fetch(url, options)
+            .then( (res:any) => {
+                return res.json()
+            })
+            .then( (data:any) => {
+                let parsedResponse = <Apple.AlbumSearchResponse> data
+                var bestMatchComparisonResult: any = undefined
+                var bestMatchId: any = undefined
 
-            for (let albumData of parsedResponse.results.albums.data){
-                let comparisonAlbum =  new Album(albumData.attributes.name, albumData.attributes.artistName, albumData.attributes.artwork.url)
-                let comparisonResult = searchAlbum.compare(comparisonAlbum)
-                let comparisonValue = comparisonResult.value
+                for (let albumData of parsedResponse.results.albums.data){
+                    let comparisonAlbum =  new Album(albumData.attributes.name, albumData.attributes.artistName, albumData.attributes.artwork.url)
+                    let comparisonResult = searchAlbum.compare(comparisonAlbum)
+                    let comparisonValue = comparisonResult.value
 
-                if (comparisonValue == 52) {
-                    bestMatchId = albumData.id
-                    break
-                } else if (bestMatchId && bestMatchComparisonResult){
-                    if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                    if (comparisonValue == 52) {
+                        bestMatchId = albumData.id
+                        break
+                    } else if (bestMatchId && bestMatchComparisonResult){
+                        if (comparisonValue > bestMatchComparisonResult.value  && comparisonValue >= 25){
+                            bestMatchId = albumData.id
+                            bestMatchComparisonResult = comparisonResult
+                        }
+
+                    } else if (comparisonValue >= 25) {
                         bestMatchId = albumData.id
                         bestMatchComparisonResult = comparisonResult
-                    }
+                    } 
 
-                } else if (comparisonValue >= 25) {
-                    bestMatchId = albumData.id
-                    bestMatchComparisonResult = comparisonResult
-                } 
-
-            }
-            if (bestMatchId != undefined) {
-                getAppleAlbum(bestMatchId)
-                .then((appleAlbum:AppleAlbum) =>{
-                    resolve(appleAlbum)
-                })
-                .catch((error:Error) =>{
-                    reject(error)
-                })
-            } else{
-                reject("ALBUM NOT FOUND")
-            }
+                }
+                if (bestMatchId != undefined) {
+                    getAppleAlbum(bestMatchId)
+                    .then((appleAlbum:AppleAlbum) =>{
+                        resolve(appleAlbum)
+                    })
+                    .catch((error:Error) =>{
+                        reject(error)
+                    })
+                } else{
+                    reject("ALBUM NOT FOUND")
+                }
+            })
+            .catch((error:Error) => {
+                reject(error)
+            })
         })
-        .catch((error:Error) => {
-            reject(error)
-        })
+        .catch(() =>{
+            reject("Error: could not get apple token")
+        })   
     })
 }
 
@@ -253,22 +264,27 @@ export function getSpotifyTrack (trackId: string, token: SpotifyToken): any {
 
 export function getAppleTrack (trackId: string): any {
     return new Promise (function(resolve, reject) {
-        const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
-        const options = {
-            headers: {
-                Authorization: `Bearer ${APPLE_TOKEN}`
-            }
-        };
-
-        fetch(url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            let parsedResponse= <Apple.Tracks> data
-            let track = new AppleTrack(parsedResponse.data[0])
-            resolve(track)
+        getAppleToken()
+        .then((appleToken:string) =>{
+            const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${appleToken}`
+                }
+            };
+            fetch(url, options)
+            .then( (res:any) => res.json())
+            .then( (data:any) => {
+                let parsedResponse= <Apple.Tracks> data
+                let track = new AppleTrack(parsedResponse.data[0])
+                resolve(track)
+            })
+            .catch((error:Error) => {
+                reject(error)
+            })
         })
-        .catch((error:Error) => {
-            reject(error)
+        .catch(() =>{
+            reject("Error: could not get apple token")
         })
     })
 }
@@ -297,22 +313,28 @@ export function getSpotifyAlbum (albumId: string, token: SpotifyToken): any {
 
 export function getAppleAlbum (albumId: string): any {
     return new Promise (function(resolve, reject) {
-        const url = `https://api.music.apple.com/v1/catalog/us/albums/${albumId}`
-        const options = {
-            headers: {
-                Authorization: `Bearer ${APPLE_TOKEN}`
-            }
-        };
-
-        fetch(url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            let parsedData = <Apple.AlbumResponse> data
-            let album = new AppleAlbum(parsedData.data[0])
-            resolve(album)
+        getAppleToken()
+        .then((appleToken:string) =>{
+            const url = `https://api.music.apple.com/v1/catalog/us/albums/${albumId}`
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${appleToken}`
+                }
+            };
+    
+            fetch(url, options)
+            .then( (res:any) => res.json())
+            .then( (data:any) => {
+                let parsedData = <Apple.AlbumResponse> data
+                let album = new AppleAlbum(parsedData.data[0])
+                resolve(album)
+            })
+            .catch((error:Error) => {
+                reject(error)
+            })
         })
-        .catch((error:Error) => {
-            reject(error)
+        .catch(() =>{
+            reject("Error: could not get apple token")
         })
     })
 }
@@ -343,22 +365,28 @@ export function getSpotifyPlaylist (playlistId: string, token: SpotifyToken): an
 export function getApplePlaylist (playlistId: string): any {
     return new Promise (function(resolve, reject) {
 
-        const url = `https://api.music.apple.com/v1/catalog/us/playlists/${playlistId}`
-        const options = {
-            headers: {
-                Authorization: `Bearer ${APPLE_TOKEN}`
-            }
-        };
-
-        fetch(url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            let parsedResponse= <Apple.PlaylistResponse> data
-            let playlist = new ApplePlaylist(parsedResponse.data[0])
-            resolve(playlist)
+        getAppleToken()
+        .then((appleToken:string) =>{
+            const url = `https://api.music.apple.com/v1/catalog/us/playlists/${playlistId}`
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${appleToken}`
+                }
+            };
+    
+            fetch(url, options)
+            .then( (res:any) => res.json())
+            .then( (data:any) => {
+                let parsedResponse= <Apple.PlaylistResponse> data
+                let playlist = new ApplePlaylist(parsedResponse.data[0])
+                resolve(playlist)
+            })
+            .catch((error:Error) => {
+                reject(error)
+            })
         })
-        .catch((error:Error) => {
-            reject(error)
+        .catch(() =>{
+            reject("Error: could not get apple token")
         })
     })
 }

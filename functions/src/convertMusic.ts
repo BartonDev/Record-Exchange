@@ -6,7 +6,7 @@ import {ApplePlaylist, SpotifyPlaylist, UniversalPlaylist} from "./musicObjects"
 import {storeUniversalTrack, storeUniversalAlbum} from "./firestoreManager"
 import {searchSpotifyTrack, searchAppleTrack, searchSpotifyAlbum, searchAppleAlbum} from "./apiManager"
 import {getSpotifyAlbum, getAppleAlbum, getSpotifyPlaylist, getApplePlaylist} from "./apiManager"
-import {APPLE_TOKEN} from "./credentials"
+import {getAppleToken} from "./AppleTokenManager"
 
 const fetch = require('cross-fetch')
 
@@ -48,34 +48,40 @@ export function spotifyTrackToUniversal (trackId: string, token: SpotifyToken): 
 
 export function appleTrackToUniversal (trackId: string, token: SpotifyToken):any {
     return new Promise(function(resolve, reject) {
-        const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
-        const options = {
-            headers: {
-                Authorization: `Bearer ${APPLE_TOKEN}`
-            }
-        };
-        
-        fetch (url, options)
-        .then( (res:any) => res.json())
-        .then( (data:any) => {
-            let parsedResponse = <Apple.Tracks>data
-            let appleTrack = new AppleTrack(parsedResponse.data[0])
-
-            searchSpotifyTrack(appleTrack.baseTrack(), token)
-            .then((spotifyTrack:SpotifyTrack) =>{
-                let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
-                storeUniversalTrack(universalTrack)
-                universalTrack.updateColor()
-                .then(()=>{
-                    resolve(universalTrack)
+        getAppleToken()
+        .then((appleToken:string) =>{
+            const url = `https://api.music.apple.com/v1/catalog/us/songs/${trackId}`
+            const options = {
+                headers: {
+                    Authorization: `Bearer ${appleToken}`
+                }
+            };
+            
+            fetch (url, options)
+            .then( (res:any) => res.json())
+            .then( (data:any) => {
+                let parsedResponse = <Apple.Tracks>data
+                let appleTrack = new AppleTrack(parsedResponse.data[0])
+    
+                searchSpotifyTrack(appleTrack.baseTrack(), token)
+                .then((spotifyTrack:SpotifyTrack) =>{
+                    let universalTrack = new UniversalTrack(spotifyTrack, appleTrack)
+                    storeUniversalTrack(universalTrack)
+                    universalTrack.updateColor()
+                    .then(()=>{
+                        resolve(universalTrack)
+                    })
+                }).catch((error:Error) =>{
+                    reject(error)
                 })
-            }).catch((error:Error) =>{
+            }).catch((error:Error) => {
+                console.log(error)
                 reject(error)
-            })
-        }).catch((error:Error) => {
-            console.log(error)
-            reject(error)
-        });
+            });
+        })
+        .catch(() =>{
+            reject("Error: could not get apple token")
+        })
     })
 }
 
