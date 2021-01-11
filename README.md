@@ -1,5 +1,5 @@
 # Record Exchange
-A WIP Web-App for sharing music & playlists between Spotify & Apple Music
+A Work-In-Progress Web-App for sharing music & playlists between Spotify & Apple Music
 
 ## Firebase
 The backend component is written in TypeScript for Firebase
