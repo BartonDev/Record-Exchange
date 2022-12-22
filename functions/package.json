@@ -21,7 +21,7 @@
     "firebase-admin": "^9.4.1",
     "firebase-functions": "^3.11.0",
     "image-js": "^0.21.9",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "node-vibrant": "^3.1.6",
     "query-string": "^6.13.7",
     "request": "^2.88.2",
